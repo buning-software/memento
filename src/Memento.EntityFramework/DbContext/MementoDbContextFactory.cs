@@ -1,8 +1,7 @@
-using Memento.EntityFramework.DbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
-namespace Memento.EntityFramework;
+namespace Memento.EntityFramework.DbContext;
 
 /// <summary>
 /// Used only by the dotnet-ef tool to build the model when adding a migration
