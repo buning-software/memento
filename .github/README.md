@@ -7,7 +7,7 @@
 [![GNU Affero General Public License v3.0 License][license-shield]][license-url]
 
 <div align="center">
-  <img src="../assets/memento.png" alt="Memento logo" width="96" height="96">
+  <img src="../assets/memento.png" alt="Memento logo" height="96">
   <h3 align="center">Memento</h3>
   <p align="center">
     <a href="https://github.com/jellebuning/memento/issues">Report Bug</a>
