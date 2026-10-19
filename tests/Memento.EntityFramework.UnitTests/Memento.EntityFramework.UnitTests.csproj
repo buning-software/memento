@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Memento.EntityFramework\Memento.EntityFramework.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The data folder helper and the fixed clock: linked from the Core tests, not copied. -->
+    <Compile Include="..\Memento.Core.UnitTests\TestSupport\TempDataDirectory.cs" LinkBase="TestSupport\Core" />
+    <Compile Include="..\Memento.Core.UnitTests\TestSupport\TestClock.cs" LinkBase="TestSupport\Core" />
+  </ItemGroup>
+</Project>

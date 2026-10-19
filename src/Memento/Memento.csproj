@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- The 10.0.19041 Windows SDK adds the WinRT StartupTask API, used for "Start with Windows" in the MSIX build. -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- Only for NotifyIcon (tray) and Screen (monitor work areas). -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <StartupObject>Memento.Program</StartupObject>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\assets\memento.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <!-- Single-project MSIX (Package.appxmanifest). The tooling rejects AnyCPU builds, so it only switches on when packaging is asked for:
+       dotnet publish -r win-x64 -p:Platform=x64 -p:GenerateAppxPackageOnBuild=true (see .github/workflows/release.yaml). -->
+  <PropertyGroup Condition="'$(GenerateAppxPackageOnBuild)' == 'true'">
+    <EnableMsixTooling>true</EnableMsixTooling>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(GenerateAppxPackageOnBuild)' == 'true'">
+    <Content Include="Assets\*" CopyToOutputDirectory="PreserveNewest" />
+    <Manifest Include="$(ApplicationManifest)" />
+    <ProjectCapability Include="Msix" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WPF and WinForms define clashing type names (Application, MessageBox, ...). -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Program.Main is the entry point, so App.xaml must not generate one. -->
+    <ApplicationDefinition Remove="App.xaml" />
+    <Page Include="App.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Memento.UnitTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="WPF-UI" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(GenerateAppxPackageOnBuild)' == 'true'">
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools.MSIX" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Memento.Core\Memento.Core.csproj" />
+    <ProjectReference Include="..\Memento.EntityFramework\Memento.EntityFramework.csproj" />
+  </ItemGroup>
+</Project>

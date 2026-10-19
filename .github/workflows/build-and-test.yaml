@@ -7,28 +7,22 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+    # The app is WPF: it only builds and runs on Windows.
+    runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - run: echo ${{matrix.os}}
-
       - name: Setup .NET SDK
         uses: actions/setup-dotnet@v6
         with:
-         dotnet-version: '10.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Load nuget cache
         uses: actions/cache@v6
         with:
-          path: |
-            ~/.nuget/packages
-            !~/.nuget/packages/unwanted
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('Directory.Packages.props') }}
           restore-keys: |
             ${{ runner.os }}-nuget-
 
@@ -39,4 +33,38 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Test
-        run: dotnet test --no-build --configuration Release --logger GitHubActions
+        run: dotnet test --no-build --configuration Release
+
+  package:
+    # Catches a broken manifest or packaging setup before a release does. The release workflow packs and signs for real.
+    if: github.event_name == 'pull_request'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Load nuget cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('Directory.Packages.props') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Build unsigned MSIX
+        run: >-
+          dotnet publish src/Memento/Memento.csproj -c Release -r win-x64 --self-contained true
+          -p:Platform=x64 -p:GenerateAppxPackageOnBuild=true -p:AppxPackageSigningEnabled=false
+          -p:AppxBundle=Never "-p:AppxPackageDir=${{ github.workspace }}\AppxPackages\"
+
+      - name: Check the package exists
+        shell: pwsh
+        run: |
+          $package = Get-ChildItem -Path "${{ github.workspace }}\AppxPackages" -Filter "*.msix" -Recurse | Select-Object -First 1
+          if (-not $package) { Write-Error "No .msix was produced."; exit 1 }
+          Write-Host "Built $($package.Name) ($([math]::Round($package.Length / 1MB, 1)) MB)"

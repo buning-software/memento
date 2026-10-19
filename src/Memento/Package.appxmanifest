@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- The build tools fill in the exe name and architecture. The release workflow sets Version from the tag. Publisher must equal the subject of the signing certificate. -->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap desktop desktop6 rescap">
+
+  <Identity
+    Name="BuningSoftware.Memento"
+    Publisher="CN=BuningSoftware"
+    Version="1.0.0.0" />
+
+  <Properties>
+    <DisplayName>Memento</DisplayName>
+    <PublisherDisplayName>Buning Software</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <!-- Memento keeps its database and settings in %APPDATA%\Memento. Without this Windows redirects those writes to a private
+         per-package folder: "Open folder" in Settings would show nothing, and data of an unpackaged install would not carry over.
+         The data then also stays when the package is uninstalled. -->
+    <desktop6:FileSystemWriteVirtualization>disabled</desktop6:FileSystemWriteVirtualization>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.19041.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application Id="App" Executable="$targetnametoken$.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="Memento"
+        Description="Quick-capture tasks from a global hotkey"
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png" />
+
+      <Extensions>
+        <!-- "Start with Windows": TaskId must match StartupTaskAutostart.TaskId. Off until the user turns it on in Settings. -->
+        <desktop:Extension Category="windows.startupTask" Executable="Memento.exe" EntryPoint="Windows.FullTrustApplication">
+          <desktop:StartupTask TaskId="MementoStartupTask" Enabled="false" DisplayName="Memento" />
+        </desktop:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+    <rescap:Capability Name="unvirtualizedResources" />
+  </Capabilities>
+</Package>

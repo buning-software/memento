@@ -1,0 +1,191 @@
+using Memento.Core.Enumerations;
+using Memento.Core.Hotkeys.Models;
+using Memento.Core.Hotkeys.Services;
+using Memento.Core.Settings.Models;
+using Memento.Core.Storage;
+using Memento.Core.UnitTests.TestSupport;
+using Memento.Settings.ViewModels;
+using Memento.UnitTests.TestSupport;
+using static Memento.UnitTests.TestSupport.TestData;
+
+namespace Memento.UnitTests.Settings.ViewModels;
+
+public class SettingsViewModelTests
+{
+    private static readonly MementoPaths Paths = new(@"C:\Users\test\AppData\Roaming\Memento");
+
+    private readonly InMemorySettingsStore _settings = new(new AppSettings
+    {
+        Theme = AppTheme.System,
+        Monitor = OverlayMonitor.Cursor,
+        DefaultTime = new TimeOnly(8, 30),
+    });
+    private readonly FakeHotkeyRegistrar _registrar = new();
+    private readonly FakeAutostart _autostart = new() { Enabled = true };
+    private readonly FakeShellLauncher _shell = new();
+
+    private SettingsViewModel CreateViewModel()
+    {
+        var hotkeys = new HotkeyManager(_registrar, _settings);
+        hotkeys.RegisterConfigured(() => { }); // as at startup: the configured hotkey is active
+        return new SettingsViewModel(_settings, hotkeys, _autostart, _shell, Paths);
+    }
+
+    [Fact]
+    public void Shows_the_current_settings()
+    {
+        var viewModel = CreateViewModel();
+
+        Assert.Equal(AppTheme.System, viewModel.Theme);
+        Assert.Equal(OverlayMonitor.Cursor, viewModel.Monitor);
+        Assert.Equal(new TimeOnly(8, 30), viewModel.DefaultTime);
+        Assert.True(viewModel.StartWithWindows);
+        Assert.Equal("Ctrl+Shift+Space", viewModel.ShortcutText);
+        Assert.Equal(Paths.DataDirectory, viewModel.DataDirectory);
+        Assert.StartsWith("Version ", viewModel.Version);
+    }
+
+    [Fact]
+    public void Opening_the_window_saves_nothing()
+    {
+        CreateViewModel(); // loading sets every property once; none of that may be saved
+
+        Assert.Equal(0, _settings.UpdateCount);
+    }
+
+    [Fact]
+    public void Changing_theme_monitor_and_default_time_saves_them()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.Theme = AppTheme.Light;
+        viewModel.Monitor = OverlayMonitor.Primary;
+        viewModel.DefaultTime = new TimeOnly(7, 0);
+
+        Assert.Equal(AppTheme.Light, _settings.Current.Theme);
+        Assert.Equal(OverlayMonitor.Primary, _settings.Current.Monitor);
+        Assert.Equal(new TimeOnly(7, 0), _settings.Current.DefaultTime);
+    }
+
+    [Fact]
+    public void Default_time_options_run_every_half_hour_from_six_and_include_a_custom_value()
+    {
+        _settings.Update(s => s with { DefaultTime = new TimeOnly(8, 15) });
+
+        var options = CreateViewModel().DefaultTimeOptions;
+
+        Assert.Equal(new TimeOnly(6, 0), options[0]);
+        Assert.Equal(new TimeOnly(23, 30), options[options.Count - 1]);
+        Assert.Equal(37, options.Count);
+        Assert.Contains(new TimeOnly(8, 15), options);
+        Assert.Equal(options.Order(), options);
+    }
+
+    [Fact]
+    public void Toggling_start_with_windows_changes_autostart()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.StartWithWindows = false;
+
+        Assert.False(_autostart.Enabled);
+    }
+
+    [Fact]
+    public void Blocked_autostart_is_shown_as_unavailable()
+    {
+        _autostart.Blocked = true;
+
+        var viewModel = CreateViewModel();
+
+        Assert.False(viewModel.IsAutostartAvailable);
+        Assert.Equal("Unavailable: Windows does not allow Memento to change your startup settings.", viewModel.AutostartDescription);
+    }
+
+    [Fact]
+    public void A_refused_autostart_change_reverts_the_switch()
+    {
+        var viewModel = CreateViewModel();
+        _autostart.Blocked = true;
+
+        viewModel.StartWithWindows = false;
+
+        Assert.True(viewModel.StartWithWindows);
+        Assert.False(viewModel.IsAutostartAvailable);
+    }
+
+    [Fact]
+    public void Recording_asks_for_a_shortcut()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.StartRecording();
+
+        Assert.True(viewModel.IsRecordingShortcut);
+        Assert.Equal("Press a shortcut…", viewModel.ShortcutText);
+    }
+
+    [Fact]
+    public void A_free_shortcut_is_applied_and_saved()
+    {
+        var viewModel = CreateViewModel();
+        viewModel.StartRecording();
+
+        viewModel.ApplyShortcut(CtrlAltM);
+
+        Assert.Equal(CtrlAltM, _settings.Current.Hotkey);
+        Assert.Equal("Ctrl+Alt+M", viewModel.ShortcutText);
+        Assert.Null(viewModel.ShortcutError);
+        Assert.False(viewModel.IsRecordingShortcut);
+    }
+
+    [Fact]
+    public void A_taken_shortcut_is_explained_and_the_old_one_stays()
+    {
+        _registrar.TakenByOtherApps.Add(CtrlAltM);
+        var viewModel = CreateViewModel();
+        viewModel.StartRecording();
+
+        viewModel.ApplyShortcut(CtrlAltM);
+
+        Assert.Equal("Ctrl+Alt+M is already in use by another application.", viewModel.ShortcutError);
+        Assert.Equal(Hotkey.Default, _settings.Current.Hotkey);
+        Assert.Equal("Ctrl+Shift+Space", viewModel.ShortcutText);
+    }
+
+    [Fact]
+    public void A_shortcut_without_a_modifier_is_refused_and_recording_continues()
+    {
+        var viewModel = CreateViewModel();
+        viewModel.StartRecording();
+
+        viewModel.ApplyShortcut(new Hotkey(HotkeyModifiers.None, 0x4D));
+
+        Assert.Equal("Include Ctrl, Alt, Shift or Win in the shortcut.", viewModel.ShortcutError);
+        Assert.True(viewModel.IsRecordingShortcut);
+    }
+
+    [Fact]
+    public void Starting_a_new_recording_clears_the_previous_error()
+    {
+        var viewModel = CreateViewModel();
+        viewModel.StartRecording();
+        viewModel.ApplyShortcut(new Hotkey(HotkeyModifiers.None, 0x4D));
+
+        viewModel.StopRecording();
+        viewModel.StartRecording();
+
+        Assert.Null(viewModel.ShortcutError);
+    }
+
+    [Fact]
+    public void The_links_open_the_data_folder_and_the_windows_color_settings()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.OpenDataFolderCommand.Execute(null);
+        viewModel.OpenColorSettingsCommand.Execute(null);
+
+        Assert.Equal(new[] { Paths.DataDirectory, "ms-settings:colors" }, _shell.Opened);
+    }
+}

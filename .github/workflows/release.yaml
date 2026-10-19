@@ -1,0 +1,125 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    uses: ./.github/workflows/build-and-test.yaml
+
+  release:
+    needs: test
+    # The app is WPF: it only builds on Windows.
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        platform: [x86, x64, ARM64]
+        include:
+          - platform: x86
+            rid: win-x86
+          - platform: x64
+            rid: win-x64
+          - platform: ARM64
+            rid: win-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Extract version from tag
+        id: version
+        shell: pwsh
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          $displayVersion = $env:TAG.TrimStart('v', 'V')
+          if ($displayVersion -notmatch '^\d+\.\d+\.\d+$') {
+            Write-Error "Release tag '$env:TAG' must look like v1.2.3 (got '$displayVersion' after stripping the prefix)."
+            exit 1
+          }
+          "DISPLAY_VERSION=$displayVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "VERSION=$displayVersion.0" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Update Package.appxmanifest version
+        shell: pwsh
+        run: |
+          $path = "src\Memento\Package.appxmanifest"
+          $manifest = [xml](Get-Content $path -Raw)
+          $manifest.Package.Identity.SetAttribute('Version', '${{ steps.version.outputs.VERSION }}')
+          $manifest.Save((Resolve-Path $path))
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Load nuget cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('Directory.Packages.props') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Decode signing certificate
+        shell: pwsh
+        env:
+          CERT_BASE64: ${{ secrets.CERTIFICATE_BASE64 }}
+        run: |
+          [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", [Convert]::FromBase64String($env:CERT_BASE64))
+
+      # Self-contained: an MSIX cannot depend on an installed .NET runtime.
+      # The MSIX tooling in Memento.csproj only switches on with GenerateAppxPackageOnBuild, so restore happens here too.
+      - name: Build and sign MSIX
+        shell: pwsh
+        env:
+          CERT_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+        run: |
+          dotnet publish src\Memento\Memento.csproj `
+            -c Release `
+            -r ${{ matrix.rid }} `
+            --self-contained true `
+            -p:Platform=${{ matrix.platform }} `
+            -p:Version=${{ steps.version.outputs.DISPLAY_VERSION }} `
+            -p:GenerateAppxPackageOnBuild=true `
+            -p:AppxPackageDir="${{ github.workspace }}\AppxPackages\" `
+            -p:AppxPackageSigningEnabled=true `
+            -p:PackageCertificateKeyFile="${{ github.workspace }}\cert.pfx" `
+            -p:PackageCertificatePassword=$env:CERT_PASSWORD `
+            -p:AppxPackageSigningTimestampDigestAlgorithm=SHA256 `
+            -p:AppxPackageSigningTimestampServerUrl=http://timestamp.digicert.com `
+            -p:AppxBundle=Never
+
+      - name: Export public certificate
+        if: matrix.platform == 'x64'
+        shell: pwsh
+        env:
+          CERT_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
+        run: |
+          $securePassword = ConvertTo-SecureString -String $env:CERT_PASSWORD -AsPlainText -Force
+          $cert = Get-PfxCertificate -FilePath "${{ github.workspace }}\cert.pfx" -Password $securePassword
+          Export-Certificate -Cert $cert -FilePath "${{ github.workspace }}\Memento.cer" | Out-Null
+
+      - name: Remove signing certificate
+        if: always()
+        shell: pwsh
+        run: Remove-Item -Path "${{ github.workspace }}\cert.pfx" -Force -ErrorAction SilentlyContinue
+
+      - name: Rename MSIX with version and platform
+        shell: pwsh
+        run: |
+          $package = Get-ChildItem -Path "${{ github.workspace }}\AppxPackages" -Filter "*.msix" -Recurse |
+            Select-Object -First 1
+          if (-not $package) { Write-Error "No .msix was produced."; exit 1 }
+          Rename-Item -Path $package.FullName -NewName "Memento_${{ steps.version.outputs.DISPLAY_VERSION }}_${{ matrix.platform }}.msix"
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            AppxPackages/**/*.msix
+            *.cer
