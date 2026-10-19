@@ -6,31 +6,15 @@ on:
   workflow_call: {}
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+  build-test:
+    # The app is WPF: it only builds and runs on Windows.
+    runs-on: windows-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - run: echo ${{matrix.os}}
-
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v6
-        with:
-         dotnet-version: '10.0.x'
-
-      - name: Load nuget cache
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.nuget/packages
-            !~/.nuget/packages/unwanted
-          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
+      - name: Setup .NET environment
+        uses: ./.github/actions/setup-dotnet-env
 
       - name: Install dependencies
         run: dotnet restore
@@ -39,4 +23,12 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Test
-        run: dotnet test --no-build --configuration Release --logger GitHubActions
+        run: dotnet test --no-build --configuration Release
+
+      # Catches a broken manifest or packaging setup early, with an unsigned x64 package. The release workflow
+      # calls this workflow for its tests, so it checks the packaging before it builds and signs the real ones.
+      - name: Package MSIX
+        uses: ./.github/actions/package-msix
+        with:
+          platform: x64
+          rid: win-x64

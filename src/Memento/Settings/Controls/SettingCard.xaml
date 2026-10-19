@@ -1,0 +1,64 @@
+<UserControl x:Class="Memento.Settings.Controls.SettingCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:controls="clr-namespace:Memento.Settings.Controls">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="SettingTextStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <Style x:Key="SettingCard" TargetType="Border">
+                <Setter Property="MinHeight" Value="68" />
+                <Setter Property="Padding" Value="16,12" />
+                <Setter Property="Margin" Value="0,0,0,4" />
+                <Setter Property="CornerRadius" Value="4" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+            </Style>
+            <Style x:Key="SettingIcon" TargetType="ui:SymbolIcon">
+                <Setter Property="FontSize" Value="20" />
+                <Setter Property="Margin" Value="0,0,16,0" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <!-- Icon, header + description (+ optional details) on the left, the content (the setting's control) on the right:
+         the layout of the Windows Community Toolkit SettingsCard. -->
+    <UserControl.Template>
+        <ControlTemplate TargetType="controls:SettingCard">
+            <Border Style="{StaticResource SettingCard}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <ui:SymbolIcon Style="{StaticResource SettingIcon}" Symbol="{TemplateBinding Icon}" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource SettingHeader}" Text="{TemplateBinding Header}" />
+                        <TextBlock Text="{TemplateBinding Description}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource SettingDescription}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Description, RelativeSource={RelativeSource TemplatedParent}}"
+                                                     Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <ContentPresenter Content="{TemplateBinding Details}" />
+                    </StackPanel>
+                    <ContentPresenter Grid.Column="2" />
+                </Grid>
+            </Border>
+        </ControlTemplate>
+    </UserControl.Template>
+</UserControl>

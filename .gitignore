@@ -60,3 +60,7 @@ nunit-*.xml
 
 *.idea
 .vs/
+# Code signing certificates and MSIX build output
+*.pfx
+*.msix
+*.cer
