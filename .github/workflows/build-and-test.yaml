@@ -6,7 +6,7 @@ on:
   workflow_call: {}
 
 jobs:
-  build:
+  build-test:
     # The app is WPF: it only builds and runs on Windows.
     runs-on: windows-latest
     steps:
@@ -25,32 +25,10 @@ jobs:
       - name: Test
         run: dotnet test --no-build --configuration Release
 
-  package:
-    # Catches a broken manifest or packaging setup before a release does. The release workflow packs and signs for real.
-    if: github.event_name == 'pull_request'
-    runs-on: windows-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup .NET environment
-        uses: ./.github/actions/setup-dotnet-env
-
-      # The MSIX tooling in Memento.csproj only switches on with GenerateAppxPackageOnBuild, so restore needs the same properties.
-      - name: Install dependencies
-        run: >-
-          dotnet restore src/Memento/Memento.csproj -r win-x64
-          -p:Platform=x64 -p:GenerateAppxPackageOnBuild=true -p:SelfContained=true
-
+      # Catches a broken manifest or packaging setup early, with an unsigned x64 package. The release workflow
+      # calls this workflow for its tests, so it checks the packaging before it builds and signs the real ones.
       - name: Build and Package MSIX
-        run: >-
-          dotnet publish src/Memento/Memento.csproj -c Release -r win-x64 --self-contained true --no-restore
-          -p:Platform=x64 -p:GenerateAppxPackageOnBuild=true -p:AppxPackageSigningEnabled=false
-          -p:AppxBundle=Never "-p:AppxPackageDir=${{ github.workspace }}\AppxPackages\"
-
-      - name: Check the package exists
-        shell: pwsh
-        run: |
-          $package = Get-ChildItem -Path "${{ github.workspace }}\AppxPackages" -Filter "*.msix" -Recurse | Select-Object -First 1
-          if (-not $package) { Write-Error "No .msix was produced."; exit 1 }
-          Write-Host "Built $($package.Name) ($([math]::Round($package.Length / 1MB, 1)) MB)"
+        uses: ./.github/actions/package-msix
+        with:
+          platform: x64
+          rid: win-x64

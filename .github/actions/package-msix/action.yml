@@ -1,0 +1,83 @@
+name: Package MSIX
+description: Restores, builds and packs Memento as a self-contained MSIX, signed when a certificate is given.
+
+inputs:
+  platform:
+    description: Package platform, matching the runtime identifier (x86, x64 or ARM64).
+    required: true
+  rid:
+    description: Runtime identifier (win-x86, win-x64 or win-arm64).
+    required: true
+  version:
+    description: Assembly version of the app, for example 1.2.3. Leave empty to keep the project default.
+    required: false
+    default: ''
+  certificate-path:
+    description: Path of the .pfx to sign with. Leave empty to build an unsigned package.
+    required: false
+    default: ''
+  certificate-password:
+    description: Password of the .pfx.
+    required: false
+    default: ''
+  output-directory:
+    description: Folder, relative to the workspace, that receives the package.
+    required: false
+    default: AppxPackages
+
+runs:
+  using: composite
+  steps:
+    # The MSIX tooling in Memento.csproj only switches on with GenerateAppxPackageOnBuild, so restore needs the same properties.
+    - name: Restore dependencies
+      shell: pwsh
+      env:
+        PLATFORM: ${{ inputs.platform }}
+        RID: ${{ inputs.rid }}
+      run: |
+        dotnet restore src\Memento\Memento.csproj -r $env:RID -p:Platform=$env:PLATFORM -p:GenerateAppxPackageOnBuild=true -p:SelfContained=true
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+    # Self-contained: an MSIX cannot depend on an installed .NET runtime.
+    - name: Build and Package MSIX
+      shell: pwsh
+      env:
+        PLATFORM: ${{ inputs.platform }}
+        RID: ${{ inputs.rid }}
+        VERSION: ${{ inputs.version }}
+        CERT_PATH: ${{ inputs.certificate-path }}
+        CERT_PASSWORD: ${{ inputs.certificate-password }}
+        OUTPUT_DIRECTORY: ${{ inputs.output-directory }}
+      run: |
+        $workspace = if ($env:GITHUB_WORKSPACE) { $env:GITHUB_WORKSPACE } else { (Get-Location).Path }
+        $packageDir = Join-Path $workspace $env:OUTPUT_DIRECTORY
+        $publishArgs = @(
+          'publish', 'src\Memento\Memento.csproj',
+          '-c', 'Release', '-r', $env:RID, '--self-contained', 'true', '--no-restore',
+          "-p:Platform=$env:PLATFORM",
+          '-p:GenerateAppxPackageOnBuild=true',
+          "-p:AppxPackageDir=$packageDir\",
+          '-p:AppxBundle=Never')
+        if ($env:VERSION) { $publishArgs += "-p:Version=$env:VERSION" }
+        if ($env:CERT_PATH) {
+          $publishArgs += '-p:AppxPackageSigningEnabled=true',
+            "-p:PackageCertificateKeyFile=$env:CERT_PATH",
+            "-p:PackageCertificatePassword=$env:CERT_PASSWORD",
+            '-p:AppxPackageSigningTimestampDigestAlgorithm=SHA256',
+            '-p:AppxPackageSigningTimestampServerUrl=http://timestamp.digicert.com'
+        }
+        else {
+          $publishArgs += '-p:AppxPackageSigningEnabled=false'
+        }
+        dotnet @publishArgs
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+    - name: Check the package exists
+      shell: pwsh
+      env:
+        OUTPUT_DIRECTORY: ${{ inputs.output-directory }}
+      run: |
+        $workspace = if ($env:GITHUB_WORKSPACE) { $env:GITHUB_WORKSPACE } else { (Get-Location).Path }
+        $package = Get-ChildItem -Path (Join-Path $workspace $env:OUTPUT_DIRECTORY) -Filter "*.msix" -Recurse | Select-Object -First 1
+        if (-not $package) { Write-Error "No .msix was produced."; exit 1 }
+        Write-Host "Built $($package.Name) ($([math]::Round($package.Length / 1MB, 1)) MB)"

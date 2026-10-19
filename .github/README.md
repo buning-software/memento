@@ -146,7 +146,7 @@ Publishing a GitHub release runs `.github/workflows/release.yaml`: it runs the t
 * Name the tag `v1.2.3` (three numbers). The workflow rejects anything else, and the tag becomes the package version.
 * Signing uses the `CERTIFICATE_BASE64` (the `.pfx`, base64 encoded) and `CERTIFICATE_PASSWORD` secrets. They are shared with Surveil and must be available to this repository. The certificate subject must equal `Publisher` in `src/Memento/Package.appxmanifest` (`CN=BuningSoftware`).
 * The certificate is valid for one year. Generate a new one before it expires, update both secrets, and ask users to trust the new `Memento.cer`.
-* Every pull request also builds an unsigned x64 MSIX, so a broken manifest shows up before a release does.
+* The test run (every pull request, and a release before it signs anything) also builds an unsigned x64 MSIX, so a broken manifest shows up early. The packaging is the `.github/actions/package-msix` action, shared with the release workflow.
 * To try the packaging locally, run the same command as the workflow, without signing:
 
   ```bash

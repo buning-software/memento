@@ -55,12 +55,6 @@ jobs:
       - name: Setup .NET environment
         uses: ./.github/actions/setup-dotnet-env
 
-      # The MSIX tooling in Memento.csproj only switches on with GenerateAppxPackageOnBuild, so restore needs the same properties.
-      - name: Restore dependencies
-        run: >-
-          dotnet restore src\Memento\Memento.csproj -r ${{ matrix.rid }}
-          -p:Platform=${{ matrix.platform }} -p:GenerateAppxPackageOnBuild=true -p:SelfContained=true
-
       - name: Decode signing certificate
         shell: pwsh
         env:
@@ -68,27 +62,14 @@ jobs:
         run: |
           [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", [Convert]::FromBase64String($env:CERT_BASE64))
 
-      # Self-contained: an MSIX cannot depend on an installed .NET runtime.
       - name: Build and Package MSIX
-        shell: pwsh
-        env:
-          CERT_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
-        run: |
-          dotnet publish src\Memento\Memento.csproj `
-            -c Release `
-            -r ${{ matrix.rid }} `
-            --self-contained true `
-            --no-restore `
-            -p:Platform=${{ matrix.platform }} `
-            -p:Version=${{ steps.version.outputs.DISPLAY_VERSION }} `
-            -p:GenerateAppxPackageOnBuild=true `
-            -p:AppxPackageDir="${{ github.workspace }}\AppxPackages\" `
-            -p:AppxPackageSigningEnabled=true `
-            -p:PackageCertificateKeyFile="${{ github.workspace }}\cert.pfx" `
-            -p:PackageCertificatePassword=$env:CERT_PASSWORD `
-            -p:AppxPackageSigningTimestampDigestAlgorithm=SHA256 `
-            -p:AppxPackageSigningTimestampServerUrl=http://timestamp.digicert.com `
-            -p:AppxBundle=Never
+        uses: ./.github/actions/package-msix
+        with:
+          platform: ${{ matrix.platform }}
+          rid: ${{ matrix.rid }}
+          version: ${{ steps.version.outputs.DISPLAY_VERSION }}
+          certificate-path: ${{ github.workspace }}\cert.pfx
+          certificate-password: ${{ secrets.CERTIFICATE_PASSWORD }}
 
       - name: Export public certificate
         if: matrix.platform == 'x64'
