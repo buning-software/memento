@@ -62,7 +62,7 @@ jobs:
         run: |
           [IO.File]::WriteAllBytes("${{ github.workspace }}\cert.pfx", [Convert]::FromBase64String($env:CERT_BASE64))
 
-      - name: Build and Package MSIX
+      - name: Package MSIX
         uses: ./.github/actions/package-msix
         with:
           platform: ${{ matrix.platform }}

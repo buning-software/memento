@@ -39,7 +39,7 @@ runs:
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
     # Self-contained: an MSIX cannot depend on an installed .NET runtime.
-    - name: Build and Package MSIX
+    - name: Package MSIX
       shell: pwsh
       env:
         PLATFORM: ${{ inputs.platform }}

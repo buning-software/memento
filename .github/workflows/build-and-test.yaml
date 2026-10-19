@@ -27,7 +27,7 @@ jobs:
 
       # Catches a broken manifest or packaging setup early, with an unsigned x64 package. The release workflow
       # calls this workflow for its tests, so it checks the packaging before it builds and signs the real ones.
-      - name: Build and Package MSIX
+      - name: Package MSIX
         uses: ./.github/actions/package-msix
         with:
           platform: x64
