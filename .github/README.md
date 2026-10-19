@@ -10,9 +10,9 @@
   <img src="../assets/memento.png" alt="Memento logo" height="96">
   <h3 align="center">Memento</h3>
   <p align="center">
-    <a href="https://github.com/jellebuning/memento/issues">Report Bug</a>
+    <a href="https://github.com/buning-software/memento/issues">Report Bug</a>
     ·
-    <a href="https://github.com/jellebuning/memento/issues">Request Feature</a>
+    <a href="https://github.com/buning-software/memento/issues">Request Feature</a>
   </p>
 </div>
 
@@ -78,7 +78,7 @@ Memento reads the deadline and the tags from the line as you type, stores the ta
 1.  Clone the repository:
 
     ```bash
-    git clone https://github.com/jellebuning/memento.git
+    git clone https://github.com/buning-software/memento.git
     cd memento
     ```
 
@@ -96,7 +96,7 @@ Memento reads the deadline and the tags from the line as you type, stores the ta
 
 ### Install a release
 
-Each [release](https://github.com/jellebuning/memento/releases) has a signed MSIX per platform (`x86`, `x64`, `ARM64`) and `Memento.cer`, the certificate it is signed with.
+Each [release](https://github.com/buning-software/memento/releases) has a signed MSIX per platform (`x86`, `x64`, `ARM64`) and `Memento.cer`, the certificate it is signed with.
 
 1.  Trust the certificate once, from an elevated PowerShell. Skip this if you already trust a Buning Software app such as Surveil: it is the same certificate.
 
@@ -144,7 +144,7 @@ Don't forget to give the project a star! Thanks again!
 Publishing a GitHub release runs `.github/workflows/release.yaml`: it runs the tests, then builds, signs and attaches an MSIX for `x86`, `x64` and `ARM64`, plus `Memento.cer`.
 
 * Name the tag `v1.2.3` (three numbers). The workflow rejects anything else, and the tag becomes the package version.
-* Signing uses the `CERTIFICATE_BASE64` (the `.pfx`, base64 encoded) and `CERTIFICATE_PASSWORD` secrets. They are shared with Surveil and must be available to this repository. The certificate subject must equal `Publisher` in `src/Memento/Package.appxmanifest` (`CN=BuningSoftware`).
+* Signing uses the `CERTIFICATE_BASE64` (the `.pfx`, base64 encoded) and `CERTIFICATE_PASSWORD` secrets. They are organization secrets of `buning-software`, shared with Surveil, and each repository that releases has to be allowed to use them (organization Settings, Secrets and variables, Actions). The certificate subject must equal `Publisher` in `src/Memento/Package.appxmanifest` (`CN=BuningSoftware`).
 * The certificate is valid for one year. Generate a new one before it expires, update both secrets, and ask users to trust the new `Memento.cer`.
 * The test run (every pull request, and a release before it signs anything) also builds an unsigned x64 MSIX, so a broken manifest shows up early. The packaging is the `.github/actions/package-msix` action, shared with the release workflow.
 * To try the packaging locally, run the same command as the workflow, without signing:
@@ -168,13 +168,13 @@ Distributed under the GNU Affero General Public License v3.0 License. See `LICEN
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/jellebuning/memento.svg?style=for-the-badge
-[contributors-url]: https://github.com/jellebuning/memento/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/jellebuning/memento.svg?style=for-the-badge
-[forks-url]: https://github.com/jellebuning/memento/network/members
-[stars-shield]: https://img.shields.io/github/stars/jellebuning/memento.svg?style=for-the-badge
-[stars-url]: https://github.com/jellebuning/memento/stargazers
-[issues-shield]: https://img.shields.io/github/issues/jellebuning/memento.svg?style=for-the-badge
-[issues-url]: https://github.com/jellebuning/memento/issues
-[license-shield]: https://img.shields.io/github/license/jellebuning/memento.svg?style=for-the-badge
-[license-url]: https://github.com/jellebuning/memento/blob/main/LICENSE
+[contributors-shield]: https://img.shields.io/github/contributors/buning-software/memento.svg?style=for-the-badge
+[contributors-url]: https://github.com/buning-software/memento/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/buning-software/memento.svg?style=for-the-badge
+[forks-url]: https://github.com/buning-software/memento/network/members
+[stars-shield]: https://img.shields.io/github/stars/buning-software/memento.svg?style=for-the-badge
+[stars-url]: https://github.com/buning-software/memento/stargazers
+[issues-shield]: https://img.shields.io/github/issues/buning-software/memento.svg?style=for-the-badge
+[issues-url]: https://github.com/buning-software/memento/issues
+[license-shield]: https://img.shields.io/github/license/buning-software/memento.svg?style=for-the-badge
+[license-url]: https://github.com/buning-software/memento/blob/main/LICENSE
