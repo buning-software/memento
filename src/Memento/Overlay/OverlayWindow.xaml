@@ -167,7 +167,7 @@
                         SpellCheck.IsEnabled="False"
                         Text="{Binding InputText, UpdateSourceTrigger=PropertyChanged}">
                 <ui:TextBox.Icon>
-                    <ui:SymbolIcon Symbol="Add20" />
+                    <ui:ImageIcon Source="/Resources/memento.png" Width="12" Height="16" />
                 </ui:TextBox.Icon>
             </ui:TextBox>
         </Grid>

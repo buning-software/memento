@@ -30,6 +30,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- App icon shown in front of the overlay's input box. -->
+    <Resource Include="..\..\assets\memento.png" Link="Resources\memento.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Program.Main is the entry point, so App.xaml must not generate one. -->
     <ApplicationDefinition Remove="App.xaml" />
     <Page Include="App.xaml" />
