@@ -13,18 +13,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: '10.0.x'
-
-      - name: Load nuget cache
-        uses: actions/cache@v6
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('Directory.Packages.props') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
+      - name: Setup .NET environment
+        uses: ./.github/actions/setup-dotnet-env
 
       - name: Install dependencies
         run: dotnet restore
@@ -43,22 +33,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: '10.0.x'
+      - name: Setup .NET environment
+        uses: ./.github/actions/setup-dotnet-env
 
-      - name: Load nuget cache
-        uses: actions/cache@v6
-        with:
-          path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('Directory.Packages.props') }}
-          restore-keys: |
-            ${{ runner.os }}-nuget-
-
-      - name: Build unsigned MSIX
+      # The MSIX tooling in Memento.csproj only switches on with GenerateAppxPackageOnBuild, so restore needs the same properties.
+      - name: Install dependencies
         run: >-
-          dotnet publish src/Memento/Memento.csproj -c Release -r win-x64 --self-contained true
+          dotnet restore src/Memento/Memento.csproj -r win-x64
+          -p:Platform=x64 -p:GenerateAppxPackageOnBuild=true -p:SelfContained=true
+
+      - name: Build and Package MSIX
+        run: >-
+          dotnet publish src/Memento/Memento.csproj -c Release -r win-x64 --self-contained true --no-restore
           -p:Platform=x64 -p:GenerateAppxPackageOnBuild=true -p:AppxPackageSigningEnabled=false
           -p:AppxBundle=Never "-p:AppxPackageDir=${{ github.workspace }}\AppxPackages\"
 
