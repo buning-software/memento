@@ -1,3 +1,4 @@
+using Memento.Core.Enumerations;
 using Memento.Enumerations;
 using Memento.Overlay.Tasks.Models;
 using Memento.Overlay.Tasks.ViewModels;
@@ -66,6 +67,17 @@ public class OverlayViewModelEditingTests
         Assert.Equal("call Bob", Assert.Single(_fixture.Repository.Tasks).Title);
         Assert.Equal(id, _viewModel.Tasks[_viewModel.SelectedIndex].Item.Id);
         Assert.Equal(OverlayFocus.Input, _viewModel.Focus);
+    }
+
+    [Fact]
+    public void Space_while_editing_is_left_to_the_editor()
+    {
+        _viewModel.HandleKey(OverlayKey.F2);
+
+        Assert.False(_viewModel.HandleKey(OverlayKey.Space));
+
+        Assert.True(_viewModel.IsEditing);
+        Assert.Equal(TaskItemStatus.Open, Assert.Single(_fixture.Repository.Tasks).Status);
     }
 
     [Fact]

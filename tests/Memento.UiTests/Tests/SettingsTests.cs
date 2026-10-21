@@ -61,7 +61,9 @@ public class SettingsTests : MementoFixture
 
         SettingsPage.Choose(settings.DefaultTimeComboBox, other);
 
-        Eventually(() => Data.TryReadSettingsFile()?.Contains($"\"DefaultTime\": \"{other}\"") == true, "the time is written to settings.json");
+        // UI Automation names the item with the time's own culture-dependent text ("6:00 AM"); settings.json holds "HH:mm".
+        var saved = TimeOnly.Parse(other).ToString("HH:mm");
+        Eventually(() => Data.TryReadSettingsFile()?.Contains($"\"DefaultTime\": \"{saved}\"") == true, $"the time {saved} is written to settings.json");
     }
 
     [Test]

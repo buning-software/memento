@@ -4,6 +4,7 @@ namespace Memento.Enumerations;
 public enum OverlayKey
 {
     Enter,
+    Space,
     Escape,
     Up,
     Down,

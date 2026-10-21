@@ -13,7 +13,7 @@ namespace Memento.Overlay.ViewModels;
 
 /// <summary>
 /// The quick-capture overlay: an input line with a live preview, and the open tasks below it.
-/// Enter saves the typed task, or completes the selected one; F2 edits the selected one in place.
+/// Enter saves the typed task, or completes the selected one (Space completes it too); F2 edits the selected one in place.
 /// Up/Down and Tab/Shift+Tab walk one wrapping list: the input (0), the tasks (1..N), then the Settings button (N+1).
 /// </summary>
 public sealed partial class OverlayViewModel : ObservableObject
@@ -94,7 +94,7 @@ public sealed partial class OverlayViewModel : ObservableObject
                 SaveEdit();
             else if (key == OverlayKey.Escape)
                 CancelEdit();
-            return true; // navigation and F2 are blocked while editing; typing goes to the editor
+            return key != OverlayKey.Space; // navigation and F2 are blocked while editing; typing (Space too) goes to the editor
         }
 
         if (Focus == OverlayFocus.Settings && key is OverlayKey.Enter or OverlayKey.F2)
@@ -113,6 +113,12 @@ public sealed partial class OverlayViewModel : ObservableObject
                 return true;
             case OverlayKey.Enter:
                 Submit();
+                return true;
+            case OverlayKey.Space:
+                // Completes only a selected task; otherwise Space is a typed space, or the Settings button's click.
+                if (Focus != OverlayFocus.Input || SelectedRow is not { } selected)
+                    return false;
+                Complete(selected);
                 return true;
             case OverlayKey.F2:
                 if (SelectedRow is { } row)

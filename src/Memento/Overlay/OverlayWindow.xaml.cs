@@ -152,6 +152,7 @@ public partial class OverlayWindow : FluentWindow
     private static OverlayKey? ToOverlayKey(Key key) => key switch
     {
         Key.Enter => OverlayKey.Enter,
+        Key.Space => OverlayKey.Space,
         Key.Escape => OverlayKey.Escape,
         Key.Up => OverlayKey.Up,
         Key.Down => OverlayKey.Down,

@@ -85,6 +85,16 @@ public class OverlayViewModelNavigationTests
     }
 
     [Fact]
+    public void Space_on_the_settings_button_is_left_to_the_button()
+    {
+        var viewModel = CreateWithTasks(1);
+        viewModel.HandleKey(OverlayKey.Up);
+
+        Assert.False(viewModel.HandleKey(OverlayKey.Space));
+        Assert.Single(viewModel.Tasks);
+    }
+
+    [Fact]
     public void Escape_asks_to_close_the_overlay()
     {
         var viewModel = CreateWithTasks(0);

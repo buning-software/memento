@@ -55,7 +55,7 @@ Memento reads the deadline and the tags from the line as you type, stores the ta
 
 * **Global hotkey overlay:** a Fluent (Mica) capture window that opens instantly over any app and hides when you click away.
 * **Natural input:** dates (`14-10-2026`, `2026-10-14`), relative days (`today`, `tomorrow`, `friday`, `tonight`), times (`15:00`, `3pm`) and `#tags`, in English and Dutch.
-* **Keyboard only:** <kbd>↑</kbd>/<kbd>↓</kbd> select a task, <kbd>Enter</kbd> completes it, <kbd>F2</kbd> edits it in place, <kbd>Esc</kbd> closes.
+* **Keyboard only:** <kbd>↑</kbd>/<kbd>↓</kbd> select a task, <kbd>Enter</kbd> or <kbd>Space</kbd> completes it, <kbd>F2</kbd> edits it in place, <kbd>Esc</kbd> closes.
 * **Private:** everything is stored locally in SQLite under `%APPDATA%\Memento`; nothing is sent anywhere.
 * **Settings:** capture shortcut, start with Windows, monitor, default deadline time and theme (light, dark or system).
 
