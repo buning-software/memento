@@ -68,6 +68,28 @@ public class SettingsViewModelTests
     }
 
     [Fact]
+    public void Changing_the_reminder_settings_saves_them()
+    {
+        var viewModel = CreateViewModel();
+        Assert.True(viewModel.RemindersEnabled);
+        Assert.Equal(15, viewModel.ReminderLeadMinutes);
+
+        viewModel.RemindersEnabled = false;
+        viewModel.ReminderLeadMinutes = 30;
+
+        Assert.False(_settings.Current.RemindersEnabled);
+        Assert.Equal(30, _settings.Current.ReminderLeadMinutes);
+    }
+
+    [Fact]
+    public void Reminder_lead_options_include_a_custom_value()
+    {
+        _settings.Update(s => s with { ReminderLeadMinutes = 20 });
+
+        Assert.Equal(new[] { 5, 10, 15, 20, 30, 60 }, CreateViewModel().ReminderLeadOptions);
+    }
+
+    [Fact]
     public void Default_time_options_run_every_half_hour_from_six_and_include_a_custom_value()
     {
         _settings.Update(s => s with { DefaultTime = new TimeOnly(8, 15) });

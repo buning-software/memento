@@ -26,6 +26,12 @@ public sealed record AppSettings
 
     public OverlayMonitor Monitor { get; init; } = OverlayMonitor.Primary;
 
+    /// <summary>Whether a Windows notification is shown when a task's deadline is near.</summary>
+    public bool RemindersEnabled { get; init; } = true;
+
+    /// <summary>How long before the deadline the notification is shown.</summary>
+    public int ReminderLeadMinutes { get; init; } = 15;
+
     [JsonIgnore]
     public Hotkey Hotkey => new(HotkeyModifiers, HotkeyKey);
 

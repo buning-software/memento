@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Memento.Core.Hotkeys.Services;
+using Memento.Core.Reminders.Services;
 using Memento.Core.Settings.Services;
 using Memento.Core.Storage;
 using Memento.Core.Tasks.Persistence;
@@ -19,6 +20,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(TimeProvider.System);
 
         services.AddSingleton<TaskService>();
+        services.AddSingleton<DeadlineReminderService>();
 
         services.AddSingleton<ISettingsStore, JsonSettingsStore>();
         services.AddSingleton<HotkeyManager>();

@@ -38,6 +38,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         Monitor = current.Monitor;
         DefaultTime = current.DefaultTime;
         DefaultTimeOptions = BuildTimeOptions(current.DefaultTime);
+        RemindersEnabled = current.RemindersEnabled;
+        ReminderLeadMinutes = current.ReminderLeadMinutes;
+        ReminderLeadOptions = BuildLeadOptions(current.ReminderLeadMinutes);
         ShortcutText = HotkeyText.Format(current.Hotkey);
         DataDirectory = paths.DataDirectory;
         Version = $"Version {typeof(SettingsViewModel).Assembly.GetName().Version?.ToString(3)}";
@@ -66,6 +69,15 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     /// <summary>Every half hour from 06:00 to 23:30, plus the configured time if it is not one of those.</summary>
     public IReadOnlyList<TimeOnly> DefaultTimeOptions { get; }
+
+    [ObservableProperty]
+    public partial bool RemindersEnabled { get; set; }
+
+    [ObservableProperty]
+    public partial int ReminderLeadMinutes { get; set; }
+
+    /// <summary>The lead times to choose from (minutes), plus the configured one if it is not one of those.</summary>
+    public IReadOnlyList<int> ReminderLeadOptions { get; }
 
     [ObservableProperty]
     public partial bool StartWithWindows { get; set; }
@@ -128,6 +140,10 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     partial void OnDefaultTimeChanged(TimeOnly value) => Save(s => s with { DefaultTime = value });
 
+    partial void OnRemindersEnabledChanged(bool value) => Save(s => s with { RemindersEnabled = value });
+
+    partial void OnReminderLeadMinutesChanged(int value) => Save(s => s with { ReminderLeadMinutes = value });
+
     partial void OnStartWithWindowsChanged(bool value)
     {
         if (_suppressSave)
@@ -150,6 +166,17 @@ public sealed partial class SettingsViewModel : ObservableObject
     {
         if (!_suppressSave)
             _settings.Update(change);
+    }
+
+    private static IReadOnlyList<int> BuildLeadOptions(int current)
+    {
+        var options = new List<int> { 5, 10, 15, 30, 60 };
+        if (!options.Contains(current))
+        {
+            options.Add(current);
+            options.Sort();
+        }
+        return options;
     }
 
     private static IReadOnlyList<TimeOnly> BuildTimeOptions(TimeOnly current)
