@@ -5,6 +5,7 @@
                  xmlns:core="clr-namespace:Memento.Core.Enumerations;assembly=Memento.Core"
                  xmlns:controls="clr-namespace:Memento.Settings.Controls"
                  Title="Memento settings"
+                 AutomationProperties.AutomationId="SettingsWindow"
                  Width="1200"
                  Height="880"
                  MinWidth="600"
@@ -59,6 +60,7 @@
                     </controls:SettingCard.Details>
                     <!-- No x:Name: WPF does not allow named elements inside a UserControl's content (MC3093). -->
                     <ui:Button MinWidth="160"
+                               AutomationProperties.AutomationId="ShortcutButton"
                                Margin="16,0,0,0"
                                VerticalAlignment="Center"
                                Content="{Binding ShortcutText}"
@@ -70,7 +72,8 @@
                 <controls:SettingCard Icon="Rocket24"
                                       Header="Start with Windows"
                                       Description="{Binding AutostartDescription}">
-                    <ui:ToggleSwitch Margin="16,0,0,0"
+                    <ui:ToggleSwitch AutomationProperties.AutomationId="StartWithWindowsToggle"
+                                     Margin="16,0,0,0"
                                      VerticalAlignment="Center"
                                      IsChecked="{Binding StartWithWindows}"
                                      IsEnabled="{Binding IsAutostartAvailable}" />
@@ -79,7 +82,8 @@
                 <controls:SettingCard Icon="Desktop24"
                                       Header="Show on"
                                       Description="Which monitor the capture window appears on.">
-                    <ComboBox MinWidth="200"
+                    <ComboBox AutomationProperties.AutomationId="MonitorComboBox"
+                              MinWidth="200"
                               Margin="16,0,0,0"
                               VerticalAlignment="Center"
                               SelectedValuePath="Tag"
@@ -92,7 +96,8 @@
                 <controls:SettingCard Icon="Clock24"
                                       Header="Default deadline time"
                                       Description="Used when a deadline has a date but no time, such as &quot;tomorrow&quot; or &quot;friday&quot;.">
-                    <ComboBox MinWidth="200"
+                    <ComboBox AutomationProperties.AutomationId="DefaultTimeComboBox"
+                              MinWidth="200"
                               Margin="16,0,0,0"
                               VerticalAlignment="Center"
                               ItemsSource="{Binding DefaultTimeOptions}"
@@ -130,12 +135,14 @@
                                       Header="App theme"
                                       Description="Select which app theme to display.">
                     <controls:SettingCard.Details>
-                        <ui:HyperlinkButton Padding="0"
+                        <ui:HyperlinkButton AutomationProperties.AutomationId="ColorSettingsLink"
+                                            Padding="0"
                                             Margin="0,4,0,0"
                                             Content="Windows color settings"
                                             Command="{Binding OpenColorSettingsCommand}" />
                     </controls:SettingCard.Details>
-                    <ComboBox MinWidth="200"
+                    <ComboBox AutomationProperties.AutomationId="ThemeComboBox"
+                              MinWidth="200"
                               Margin="16,0,0,0"
                               VerticalAlignment="Center"
                               SelectedValuePath="Tag"
@@ -176,6 +183,7 @@
                                 <TextBlock Style="{StaticResource SettingDescription}" Text="{Binding DataDirectory}" />
                             </StackPanel>
                             <ui:Button Grid.Column="1"
+                                       AutomationProperties.AutomationId="OpenFolderButton"
                                        Margin="16,0,0,0"
                                        VerticalAlignment="Center"
                                        Content="Open folder"

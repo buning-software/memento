@@ -7,6 +7,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Memento.Core.UnitTests/Memento.Core.UnitTests.csproj" />
     <Project Path="tests/Memento.EntityFramework.UnitTests/Memento.EntityFramework.UnitTests.csproj" />
+    <Project Path="tests/Memento.UiTests/Memento.UiTests.csproj" />
     <Project Path="tests/Memento.UnitTests/Memento.UnitTests.csproj" />
   </Folder>
 </Solution>
