@@ -176,5 +176,21 @@ public partial class OverlayWindow : FluentWindow
 
     private void SettingsButton_Click(object sender, RoutedEventArgs e) => _viewModel.RequestSettings();
 
-    private void Window_Deactivated(object? sender, EventArgs e) => HideOverlay();
+    /// <summary>Losing focus hides the overlay, except to its own settings window, which stays open on top of it like a dialog.</summary>
+    private void Window_Deactivated(object? sender, EventArgs e)
+    {
+        if (OwnedWindows.Count == 0)
+            HideOverlay();
+    }
+
+    /// <summary>Back from the settings window: the overlay is as freshly opened (no selection, input focused).</summary>
+    public void ResetAfterSettings()
+    {
+        if (!IsVisible)
+            return;
+
+        _viewModel.OnShown();
+        Activate();
+        FocusInput();
+    }
 }

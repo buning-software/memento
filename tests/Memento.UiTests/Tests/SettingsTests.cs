@@ -77,11 +77,25 @@ public class SettingsTests : MementoFixture
     }
 
     [Test]
-    public void SettingsButton_HidesTheOverlay()
+    public void SettingsButton_KeepsTheOverlayOpen()
     {
-        OpenSettings();
+        App.OpenOverlay().SettingsButton.Click();
 
-        Eventually(() => !App.IsOverlayShown, "the overlay gets out of the way");
+        Eventually(() => App.IsSettingsShown, "the settings window opens");
+        Eventually(() => App.IsSettingsFocused, "the settings window comes in front with the focus, nothing had to give it");
+        Assert.That(App.IsOverlayShown, Is.True, "the overlay stays open behind the settings window");
+    }
+
+    [Test]
+    public void ClosingSettings_ReturnsToTheOverlayAsFreshlyOpened()
+    {
+        var settings = OpenSettings();
+
+        settings.Window.Context.Input.SendKeys(VirtualKey.Escape);
+
+        Eventually(() => !App.IsSettingsShown, "Esc closes the settings window");
+        Assert.That(App.IsOverlayShown, Is.True, "the overlay is still open");
+        Eventually(() => App.Overlay().InputBox.HasKeyboardFocus, "the input box has the keyboard focus again, not the Settings button");
     }
 
     [Test]

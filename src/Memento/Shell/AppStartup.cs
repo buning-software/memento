@@ -39,11 +39,8 @@ public sealed class AppStartup(
 
         var hotkeyResult = hotkeys.RegisterConfigured(overlay.ToggleOverlay);
 
-        overlayViewModel.SettingsRequested += (_, _) =>
-        {
-            settingsWindow.Open();
-            overlay.HideOverlay();
-        };
+        overlayViewModel.SettingsRequested += (_, _) => settingsWindow.Open(overlay);
+        settingsWindow.Closed += (_, _) => overlay.ResetAfterSettings();
 
         tray.OpenRequested += (_, _) => overlay.ShowOverlay();
         tray.ExitRequested += (_, _) => Application.Current.Shutdown();

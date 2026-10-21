@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using System.Reflection;
 using WinUia;
 using WinUia.Input;
@@ -24,15 +25,16 @@ public sealed class MementoApp : App
 
     public static MementoApp Launch(TestDataDirectory data) => Launch<MementoApp>(data.LaunchOptions);
 
-    protected override AppLaunchOptions DefaultOptions => new() { ShowPointer = false };
+    protected override AppLaunchOptions DefaultOptions => new() { ShowPointer = true };
 
     public bool IsOverlayShown => TryFindOwnWindow(OverlayTitle, Absent) is not null;
 
-    public int SettingsWindowCount => Context.GetRootElement()
-        .FindAll(e => e.ProcessId == Process.Id && e.ControlType == ControlType.Window && e.Name == SettingsTitle, TreeScope.Children)
-        .Count;
+    public int SettingsWindowCount => SettingsWindows().Count();
 
-    public bool IsSettingsShown => TryFindOwnWindow(SettingsTitle, Absent) is not null;
+    public bool IsSettingsShown => TryFindSettingsWindow(Absent) is not null;
+
+    /// <summary>Whether the settings window has the keyboard focus by itself, without the test giving it.</summary>
+    public bool IsSettingsFocused => TryFindSettingsWindow(Absent)?.HasKeyboardFocus == true;
 
     /// <summary>
     /// Opens the capture overlay with the global shortcut, the way a user does. Without <paramref name="shortcut"/> it uses the
@@ -72,7 +74,8 @@ public sealed class MementoApp : App
 
     public SettingsPage Settings()
     {
-        var window = FindOwnWindow(SettingsTitle);
+        var window = TryFindSettingsWindow(Context.DefaultTimeout)
+            ?? throw new UiaElementNotFoundException($"No window titled '{SettingsTitle}' in process {Process.Id}.");
 
         // Keys go to the foreground window; Windows does not always give it to a window opened from one that just hid.
         window.Focus();
@@ -103,6 +106,25 @@ public sealed class MementoApp : App
             e => e.ProcessId == processId && e.ControlType == ControlType.Window && e.Name == title,
             TreeScope.Children,
             timeout);
+    }
+
+    // The settings window is owned by the overlay, and UI Automation lists an owned window under its owner, not on the desktop.
+    private IEnumerable<Element> SettingsWindows()
+    {
+        var processId = Process.Id;
+        Expression<Func<Element, bool>> isSettings = e => e.ProcessId == processId && e.ControlType == ControlType.Window && e.Name == SettingsTitle;
+
+        var windows = Context.GetRootElement().FindAll(isSettings, TreeScope.Children).ToList();
+        if (TryFindOwnWindow(OverlayTitle, TimeSpan.FromMilliseconds(100)) is { } overlay)
+            windows.AddRange(overlay.FindAll(isSettings, TreeScope.Children));
+        return windows;
+    }
+
+    private Element? TryFindSettingsWindow(TimeSpan timeout)
+    {
+        Element? window = null;
+        Poll.Until(() => (window = SettingsWindows().FirstOrDefault()) is not null, timeout);
+        return window;
     }
 
     private static string FindBuiltExecutable()
