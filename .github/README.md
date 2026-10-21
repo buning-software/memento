@@ -92,6 +92,8 @@ Memento reads the deadline and the tags from the line as you type, stores the ta
 
     Memento starts in the tray; press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Space</kbd> to open it.
 
+    `dotnet test` also runs the UI tests (`tests/Memento.UiTests`). They type and click on the real desktop, so leave the keyboard and mouse alone while they run, and run only the unit tests with `dotnet test --project tests/Memento.UnitTests` (or one of the other unit test projects). Each UI test starts Memento on its own temporary data folder (`MEMENTO_DATA_DIR`) with its own capture shortcut, so it never touches your tasks or settings, even while your own Memento runs.
+
     Debug builds keep their data in `%APPDATA%\Memento.Dev`, so developing never touches the database of an installed Memento, and they can run next to it. Both register the same global shortcut, so change one of them in the settings if you run both at once.
 
 ### Install a release
@@ -122,6 +124,7 @@ A modular monolith in three projects; the dependencies point one way only: `Meme
 | `tests/Memento.Core.UnitTests` | Unit tests for Core. `TestSupport/` holds the shared fakes. |
 | `tests/Memento.EntityFramework.UnitTests` | Tests for the data layer against real SQLite files in a temp folder. |
 | `tests/Memento.UnitTests` | Unit tests for the view models and presentation helpers. |
+| `tests/Memento.UiTests` | End-to-end tests that launch the built `Memento.exe` and drive it through UI Automation with [WinUia](https://github.com/buning-software/win-uia) and NUnit. |
 
 Views only bind to view models. View models and services reach the outside world through small interfaces (`ITaskRepository`, `ISettingsStore`, `IHotkeyRegistrar`, `IDialogService`, `IAutostart`, `IShellLauncher`) and `TimeProvider`, so the behaviour is tested without windows, disk or registry.
 

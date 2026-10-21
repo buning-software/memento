@@ -22,8 +22,17 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      - name: Test
-        run: dotnet test --no-build --configuration Release
+      - name: Unit tests
+        run: |
+          foreach ($project in Get-ChildItem tests -Filter *.UnitTests.csproj -Recurse) {
+            dotnet test --project $project.FullName --no-build --configuration Release
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+      # Drives the real app through UI Automation: needs the interactive desktop that hosted Windows runners provide.
+      - name: UI tests
+        timeout-minutes: 15
+        run: dotnet test --project tests/Memento.UiTests --no-build --configuration Release
 
       # Catches a broken manifest or packaging setup early, with an unsigned x64 package. The release workflow
       # calls this workflow for its tests, so it checks the packaging before it builds and signs the real ones.

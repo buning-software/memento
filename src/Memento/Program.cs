@@ -18,17 +18,30 @@ public static class Program
     private const string SingleInstanceName = @"Local\Memento.SingleInstance";
 #endif
 
+    /// <summary>
+    /// Points Memento at another data folder (the UI tests use a temp one). That instance gets its own single-instance
+    /// name too, so it never trips over a Memento that is already running.
+    /// </summary>
+    private const string DataDirectoryVariable = "MEMENTO_DATA_DIR";
+
     private static bool _crashing;
 
     [STAThread]
     public static int Main()
     {
-        using var instance = SingleInstanceGuard.TryAcquire(SingleInstanceName);
+        var paths = Environment.GetEnvironmentVariable(DataDirectoryVariable) is { Length: > 0 } dataDirectory
+            ? new MementoPaths(System.IO.Path.GetFullPath(dataDirectory))
+            : MementoPaths.ForCurrentUser(DataFolderName);
+        var instanceName = paths.DataDirectory == MementoPaths.ForCurrentUser(DataFolderName).DataDirectory
+            ? SingleInstanceName
+            : $@"Local\Memento.SingleInstance.{paths.DataDirectory.Replace('\\', '/').ToLowerInvariant()}";
+
+        using var instance = SingleInstanceGuard.TryAcquire(instanceName);
         if (instance is null)
             return 0; // already running: that instance stays in the tray
 
         var services = new ServiceCollection()
-            .AddMementoCore(MementoPaths.ForCurrentUser(DataFolderName))
+            .AddMementoCore(paths)
             .AddMementoApp()
             .BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true });
 

@@ -1,0 +1,7 @@
+<Project>
+  <!-- Skips tests/Directory.Build.props: that one adds xunit.v3 and makes every test project an exe. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../../'))" />
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+</Project>

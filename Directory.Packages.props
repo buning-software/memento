@@ -16,4 +16,12 @@
     <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.10.0" />
     <PackageVersion Include="xunit.v3" Version="4.0.2" />
   </ItemGroup>
+  <ItemGroup Label="UI tests">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageVersion Include="NUnit" Version="5.0.0" />
+    <PackageVersion Include="NUnit.Analyzers" Version="4.15.0" />
+    <PackageVersion Include="NUnit3TestAdapter" Version="6.3.1" />
+    <PackageVersion Include="WinUia" Version="0.1.1" />
+    <PackageVersion Include="WinUia.NUnit" Version="0.1.1" />
+  </ItemGroup>
 </Project>

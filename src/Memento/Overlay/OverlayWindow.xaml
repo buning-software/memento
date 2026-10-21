@@ -7,6 +7,7 @@
                  xmlns:taskmodels="clr-namespace:Memento.Overlay.Tasks.Models"
                  xmlns:taskviewmodels="clr-namespace:Memento.Overlay.Tasks.ViewModels"
                  Title="Memento"
+                 AutomationProperties.AutomationId="OverlayWindow"
                  Width="680"
                  SizeToContent="Height"
                  MinWidth="0"
@@ -66,6 +67,8 @@
         <Style x:Key="TaskRowStyle" TargetType="ListBoxItem">
             <Setter Property="Focusable" Value="False" />
             <Setter Property="Margin" Value="4,1" />
+            <!-- Without this UI Automation names a row after its view model type. -->
+            <Setter Property="AutomationProperties.Name" Value="{Binding Title}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">

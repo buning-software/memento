@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <IsTestProject>true</IsTestProject>
+    <!-- global.json selects Microsoft.Testing.Platform, so NUnit runs as its own test host instead of through VSTest. -->
+    <OutputType>Exe</OutputType>
+    <EnableNUnitRunner>true</EnableNUnitRunner>
+    <RootNamespace>Memento.UiTests</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup>
+    <MementoBinDirectory>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\..\src\Memento\bin\$(Configuration)'))</MementoBinDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Lets the tests find the exe they drive; MEMENTO_EXE overrides it. -->
+    <AssemblyMetadata Include="MementoBinDirectory" Value="$(MementoBinDirectory)" />
+    <!-- Every test is a UI test: serialised on the desktop and tagged Category=UI. -->
+    <AssemblyAttribute Include="WinUia.NUnit.UiTestAttribute" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="NUnit" />
+    <PackageReference Include="NUnit3TestAdapter" />
+    <PackageReference Include="NUnit.Analyzers" />
+    <PackageReference Include="WinUia" />
+    <PackageReference Include="WinUia.NUnit" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Builds the app first (same configuration) without referencing its assembly: the tests launch the exe. -->
+    <ProjectReference Include="..\..\src\Memento\Memento.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>
