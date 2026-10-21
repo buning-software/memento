@@ -100,29 +100,6 @@
                               ItemStringFormat="HH:mm" />
                 </controls:SettingCard>
 
-                <!-- Reminders -->
-                <ui:TextBlock Style="{StaticResource SectionHeader}" Text="Reminders" />
-
-                <controls:SettingCard Icon="Alert24"
-                                      Header="Deadline reminders"
-                                      Description="Show a Windows notification when a task's deadline is near.">
-                    <ui:ToggleSwitch Margin="16,0,0,0"
-                                     VerticalAlignment="Center"
-                                     IsChecked="{Binding RemindersEnabled}" />
-                </controls:SettingCard>
-
-                <controls:SettingCard Icon="Timer24"
-                                      Header="Remind me"
-                                      Description="How long before the deadline the notification appears.">
-                    <ComboBox MinWidth="200"
-                              Margin="16,0,0,0"
-                              VerticalAlignment="Center"
-                              ItemsSource="{Binding ReminderLeadOptions}"
-                              SelectedItem="{Binding ReminderLeadMinutes}"
-                              IsEnabled="{Binding RemindersEnabled}"
-                              ItemStringFormat="{}{0} minutes before" />
-                </controls:SettingCard>
-
                 <!-- Appearance -->
                 <ui:TextBlock Style="{StaticResource SectionHeader}" Text="Appearance" />
 

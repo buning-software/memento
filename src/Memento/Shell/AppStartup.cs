@@ -9,7 +9,6 @@ using Memento.EntityFramework.Initialization;
 using Memento.Hotkeys;
 using Memento.Overlay;
 using Memento.Overlay.ViewModels;
-using Memento.Reminders;
 using Memento.Settings.Services;
 using Memento.Shell.Services;
 using Memento.Theme;
@@ -25,7 +24,6 @@ public sealed class AppStartup(
     SettingsWindowLauncher settingsWindow,
     HotkeyManager hotkeys,
     TrayIcon tray,
-    ReminderScheduler reminders,
     ISettingsStore settings,
     IDialogService dialogs)
 {
@@ -48,7 +46,6 @@ public sealed class AppStartup(
         tray.OpenRequested += (_, _) => overlay.ShowOverlay();
         tray.ExitRequested += (_, _) => Application.Current.Shutdown();
         tray.Show();
-        reminders.Start();
         ShowHotkeyInTray(settings.Current);
         settings.Changed += (_, current) => ShowHotkeyInTray(current);
 

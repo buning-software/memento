@@ -4,7 +4,6 @@ using Memento.EntityFramework;
 using Memento.Hotkeys;
 using Memento.Overlay;
 using Memento.Overlay.Tasks.Services;
-using Memento.Reminders;
 using Memento.Overlay.ViewModels;
 using Memento.Settings;
 using Memento.Settings.Services;
@@ -24,7 +23,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<AppStartup>();
         services.AddSingleton<TrayIcon>();
         services.AddSingleton<SettingsWindowLauncher>();
-        services.AddSingleton<ReminderScheduler>();
 
         // Storage: the tasks database (Memento.EntityFramework).
         services.AddMementoEntityFramework();
