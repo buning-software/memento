@@ -66,6 +66,21 @@ public class OverlayTests : MementoFixture
     }
 
     [Test]
+    public void SpaceOnASelectedTask_CompletesIt()
+    {
+        var overlay = App.OpenOverlay();
+        overlay.Type(Task);
+        overlay.Press(VirtualKey.Enter);
+        Eventually(() => overlay.Rows.Count == 1, "the task appears in the list");
+
+        overlay.Press(VirtualKey.Down);
+        overlay.Press(VirtualKey.Space);
+
+        Eventually(() => overlay.Rows.Count == 0, "the completed task leaves the list");
+        Assert.That(overlay.InputBox.ValuePattern.Value, Is.Empty, "the space is not typed into the input");
+    }
+
+    [Test]
     public void DownArrow_WalksFromInputThroughTasksToSettings()
     {
         var overlay = App.OpenOverlay();

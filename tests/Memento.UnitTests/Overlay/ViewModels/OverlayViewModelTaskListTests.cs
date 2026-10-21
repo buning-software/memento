@@ -182,6 +182,35 @@ public class OverlayViewModelTaskListTests
     }
 
     [Fact]
+    public void Space_on_a_selected_task_completes_it_like_enter()
+    {
+        _fixture.AddTask("one");
+        var two = _fixture.AddTask("two");
+        _fixture.AddTask("three");
+        var viewModel = _fixture.CreateViewModel();
+        viewModel.SelectedIndex = 1;
+
+        Assert.True(viewModel.HandleKey(OverlayKey.Space));
+
+        Assert.Equal(TaskItemStatus.Completed, _fixture.Repository.Tasks.Single(t => t.Id == two.Id).Status);
+        Assert.Equal(new[] { "one", "three" }, viewModel.Tasks.Select(row => row.Title));
+        Assert.Equal(1, viewModel.SelectedIndex);
+    }
+
+    [Fact]
+    public void Space_without_a_selected_task_is_left_to_the_input()
+    {
+        _fixture.AddTask("one");
+        var viewModel = _fixture.CreateViewModel();
+        viewModel.InputText = "call";
+
+        Assert.False(viewModel.HandleKey(OverlayKey.Space));
+
+        Assert.Single(viewModel.Tasks);
+        Assert.Equal("call", viewModel.InputText);
+    }
+
+    [Fact]
     public void Completing_the_last_row_selects_the_row_above()
     {
         _fixture.AddTask("one");
