@@ -61,7 +61,7 @@ public class SettingsTests : MementoFixture
 
         SettingsPage.Choose(settings.DefaultTimeComboBox, other);
 
-        Eventually(() => Data.TryReadSettingsFile()?.Contains($"\"DefaultTime\": \"{other}\"") == true, "the time is written to settings.json");
+        Eventually(() => Data.TryReadSettingsFile()?.Contains($"\"DefaultTime\": \"{other}\"") == true, $"the time {other} is written to settings.json");
     }
 
     [Test]
