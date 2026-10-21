@@ -5,8 +5,13 @@ on:
   workflow_dispatch:
   workflow_call: {}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build-test:
+  build:
+    name: Build
     # The app is WPF: it only builds and runs on Windows.
     runs-on: windows-latest
     steps:
@@ -22,17 +27,78 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      - name: Unit tests
+      - name: Upload build output
+        uses: actions/upload-artifact@v7
+        with:
+          name: build-output
+          path: |
+            src/*/bin/Release
+            tests/*/bin/Release
+          if-no-files-found: error
+          retention-days: 1
+
+  unit-test:
+    name: Run unit tests
+    needs: build
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET environment
+        uses: ./.github/actions/setup-dotnet-env
+
+      - name: Install dependencies
+        run: dotnet restore
+
+      - name: Download build output
+        uses: actions/download-artifact@v8
+        with:
+          name: build-output
+
+      # One run per project: the unit tests are xUnit, the UI tests NUnit, and only the UI tests carry Category=UI.
+      - name: Unit test
         run: |
           foreach ($project in Get-ChildItem tests -Filter *.UnitTests.csproj -Recurse) {
             dotnet test --project $project.FullName --no-build --configuration Release
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
 
-      # Drives the real app through UI Automation: needs the interactive desktop that hosted Windows runners provide.
-      - name: UI tests
-        timeout-minutes: 15
+  ui-test:
+    name: Run UI tests
+    needs: build
+    # Drives the real app through UI Automation: needs the interactive desktop that hosted Windows runners provide.
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET environment
+        uses: ./.github/actions/setup-dotnet-env
+
+      - name: Install dependencies
+        run: dotnet restore
+
+      - name: Download build output
+        uses: actions/download-artifact@v8
+        with:
+          name: build-output
+
+      - name: UI test
         run: dotnet test --project tests/Memento.UiTests --no-build --configuration Release
+
+  package:
+    name: Package MSIX
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET environment
+        uses: ./.github/actions/setup-dotnet-env
 
       # Catches a broken manifest or packaging setup early, with an unsigned x64 package. The release workflow
       # calls this workflow for its tests, so it checks the packaging before it builds and signs the real ones.

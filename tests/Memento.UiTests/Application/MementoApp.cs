@@ -15,6 +15,7 @@ public sealed class MementoApp : App
     private const string SettingsTitle = "Memento settings";
 
     private static readonly TimeSpan Absent = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan ShowTimeout = TimeSpan.FromSeconds(10);
 
     /// <summary>The Memento.exe the tests drive: the MEMENTO_EXE variable, else the build next to the tests.</summary>
     public static string BuiltExecutable => Environment.GetEnvironmentVariable(ExePathVariable) is { Length: > 0 } overridden
@@ -51,8 +52,9 @@ public sealed class MementoApp : App
             Context.Input.SendKeys(shortcut ?? TestDataDirectory.CaptureShortcut);
 
             // Startup shows the overlay once, off-screen and transparent, to warm it up: only a window on a screen counts.
+            // The first launch on a cold machine can take many seconds to show it; pressing again meanwhile would hide it.
             Element? window = null;
-            if (Poll.Until(() => (window = TryFindOwnWindow(OverlayTitle, TimeSpan.FromMilliseconds(100))) is { IsOffscreen: false }, TimeSpan.FromSeconds(3)))
+            if (Poll.Until(() => (window = TryFindOwnWindow(OverlayTitle, TimeSpan.FromMilliseconds(100))) is { IsOffscreen: false }, ShowTimeout))
                 return new OverlayPage(window!);
         }
 
