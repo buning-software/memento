@@ -13,10 +13,14 @@ public class TaskRowViewModelTests
     private TaskRowViewModel Row(DateTime? deadline = null, params string[] tags) =>
         new(new TaskItem("1", "call Anna", deadline, tags, TestClock.Now), _deadlines);
 
-    [Fact]
-    public void The_row_shows_the_title_of_its_task()
+    [Theory]
+    [InlineData("call Anna")]
+    [InlineData("call Bob")]
+    public void The_row_shows_the_title_of_its_task(string title)
     {
-        Assert.Equal("call Anna", Row().Title);
+        var item = new TaskItem("1", title, null, [], TestClock.Now);
+
+        Assert.Equal(title, new TaskRowViewModel(item, _deadlines).Title);
     }
 
     [Fact]
