@@ -63,6 +63,66 @@ public sealed class TaskMapperTests
         Assert.Equal(TaskItemStatus.Open, item.Status);
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData(",")]
+    [InlineData(",,")]
+    public void ToItem_reads_empty_or_separator_only_tags_as_none(string tags)
+    {
+        var item = TaskMapper.ToItem(new TaskEntity { Id = "id-1", Title = "buy milk", CreatedAt = Now, Tags = tags });
+
+        Assert.Empty(item.Tags);
+    }
+
+    [Fact]
+    public void ToItem_reads_a_single_tag()
+    {
+        var item = TaskMapper.ToItem(new TaskEntity { Id = "id-1", Title = "buy milk", CreatedAt = Now, Tags = "home" });
+
+        Assert.Equal(["home"], item.Tags);
+    }
+
+    [Theory]
+    [InlineData(TaskItemStatus.Open)]
+    [InlineData(TaskItemStatus.Completed)]
+    [InlineData(TaskItemStatus.Deleted)]
+    public void Every_status_survives_the_mapping_in_both_directions(TaskItemStatus status)
+    {
+        var item = new TaskItem("id-1", "x", null, [], Now, status);
+
+        Assert.Equal(status, TaskMapper.ToEntity(item).Status);
+        Assert.Equal(status, TaskMapper.ToItem(TaskMapper.ToEntity(item)).Status);
+    }
+
+    [Fact]
+    public void A_missing_original_text_stays_null_in_both_directions()
+    {
+        var item = new TaskItem("id-1", "buy milk", null, [], Now, OriginalText: null);
+
+        Assert.Null(TaskMapper.ToEntity(item).OriginalText);
+        Assert.Null(TaskMapper.ToItem(TaskMapper.ToEntity(item)).OriginalText);
+    }
+
+    [Fact]
+    public void An_empty_original_text_is_not_turned_into_null()
+    {
+        var entity = TaskMapper.ToEntity(new TaskItem("id-1", "buy milk", null, [], Now, OriginalText: ""));
+
+        Assert.Equal("", entity.OriginalText);
+    }
+
+    [Fact]
+    public void A_task_without_deadline_or_tags_survives_the_round_trip()
+    {
+        var original = new TaskItem("id-1", "buy milk", null, [], Now);
+
+        var item = TaskMapper.ToItem(TaskMapper.ToEntity(original));
+
+        Assert.Null(item.Deadline);
+        Assert.Empty(item.Tags);
+        Assert.Equal(original, item with { Tags = original.Tags });
+    }
+
     [Fact]
     public void A_task_survives_the_round_trip()
     {

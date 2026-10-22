@@ -121,6 +121,114 @@ public class HotkeyManagerTests
     }
 
     [Fact]
+    public void A_free_configured_hotkey_leaves_the_settings_untouched()
+    {
+        Start();
+
+        Assert.Equal(0, _settings.UpdateCount);
+    }
+
+    [Fact]
+    public void The_default_hotkey_is_registered_when_it_is_the_configured_one()
+    {
+        _settings.Update(s => s.WithHotkey(Hotkey.Default));
+        int updatesBefore = _settings.UpdateCount;
+
+        var result = Start();
+
+        Assert.Equal(new HotkeyStartupResult(HotkeyStartupOutcome.Registered, Hotkey.Default), result);
+        Assert.Equal(Hotkey.Default, Assert.Single(_registrar.Registered).Key);
+        Assert.Equal(updatesBefore, _settings.UpdateCount);
+    }
+
+    [Fact]
+    public void The_fallback_saves_the_default_exactly_once_and_its_handler_works()
+    {
+        _registrar.TakenByOtherApps.Add(CtrlAltM);
+
+        Start();
+
+        Assert.Equal(1, _settings.UpdateCount);
+        _registrar.Registered[Hotkey.Default]();
+        Assert.Equal(1, _presses);
+    }
+
+    [Fact]
+    public void A_taken_default_leaves_the_settings_untouched()
+    {
+        _settings.Update(s => s.WithHotkey(Hotkey.Default));
+        int updatesBefore = _settings.UpdateCount;
+        _registrar.TakenByOtherApps.Add(Hotkey.Default);
+
+        Start();
+
+        Assert.Equal(updatesBefore, _settings.UpdateCount);
+        Assert.Equal(Hotkey.Default, _settings.Current.Hotkey);
+    }
+
+    [Fact]
+    public void A_failed_fallback_leaves_the_settings_untouched()
+    {
+        _registrar.TakenByOtherApps.Add(CtrlAltM);
+        _registrar.TakenByOtherApps.Add(Hotkey.Default);
+
+        Start();
+
+        Assert.Equal(0, _settings.UpdateCount);
+    }
+
+    [Fact]
+    public void A_failed_TryChange_does_not_touch_the_settings_and_the_previous_handler_still_works()
+    {
+        Start();
+        _registrar.TakenByOtherApps.Add(CtrlAltN);
+
+        Assert.False(_manager.TryChange(CtrlAltN));
+
+        Assert.Equal(0, _settings.UpdateCount);
+        _registrar.Registered[CtrlAltM]();
+        Assert.Equal(1, _presses);
+    }
+
+    [Fact]
+    public void A_failed_TryChange_can_be_retried_once_the_hotkey_is_free()
+    {
+        Start();
+        _registrar.TakenByOtherApps.Add(CtrlAltN);
+        Assert.False(_manager.TryChange(CtrlAltN));
+        _registrar.TakenByOtherApps.Remove(CtrlAltN);
+
+        Assert.True(_manager.TryChange(CtrlAltN));
+
+        Assert.Equal(CtrlAltN, Assert.Single(_registrar.Registered).Key);
+        Assert.Equal(CtrlAltN, _settings.Current.Hotkey);
+        Assert.Equal(1, _settings.UpdateCount);
+    }
+
+    [Fact]
+    public void TryChange_twice_in_a_row_leaves_only_the_last_hotkey_registered()
+    {
+        Start();
+
+        Assert.True(_manager.TryChange(CtrlAltN));
+        Assert.True(_manager.TryChange(Hotkey.Default));
+
+        Assert.Equal(Hotkey.Default, Assert.Single(_registrar.Registered).Key);
+        Assert.Equal(Hotkey.Default, _settings.Current.Hotkey);
+        Assert.Equal(2, _settings.UpdateCount);
+    }
+
+    [Fact]
+    public void TryChange_before_the_start_registers_a_handler_that_does_nothing()
+    {
+        Assert.True(_manager.TryChange(CtrlAltN));
+
+        _registrar.Registered[CtrlAltN]();
+        Assert.Equal(0, _presses);
+        Assert.Equal(CtrlAltN, _settings.Current.Hotkey);
+    }
+
+    [Fact]
     public void TryChange_after_a_failed_start_can_register_the_configured_hotkey()
     {
         _registrar.TakenByOtherApps.Add(CtrlAltM);

@@ -109,6 +109,114 @@ public sealed class JsonSettingsStoreTests : IDisposable
     }
 
     [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("null")]
+    [InlineData("[]")]
+    [InlineData("42")]
+    public void An_empty_or_non_object_file_gives_the_defaults(string json)
+    {
+        WriteSettingsFile(json);
+
+        Assert.Equal(new AppSettings(), new JsonSettingsStore(_data.Paths).Current);
+    }
+
+    [Fact]
+    public void An_empty_object_gives_the_defaults()
+    {
+        WriteSettingsFile("{}");
+
+        Assert.Equal(new AppSettings(), new JsonSettingsStore(_data.Paths).Current);
+    }
+
+    [Fact]
+    public void Unknown_properties_are_ignored_and_the_known_ones_are_read()
+    {
+        WriteSettingsFile("""{ "FutureSetting": { "a": [1, 2] }, "Theme": "Light", "Another": 7 }""");
+
+        var settings = new JsonSettingsStore(_data.Paths).Current;
+
+        Assert.Equal(AppTheme.Light, settings.Theme);
+        Assert.Equal(Hotkey.Default, settings.Hotkey);
+    }
+
+    [Fact]
+    public void A_file_that_is_locked_while_reading_gives_the_defaults()
+    {
+        WriteSettingsFile("""{ "Theme": "Light" }""");
+        using var locked = new FileStream(_data.Paths.SettingsPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+        Assert.Equal(new AppSettings(), new JsonSettingsStore(_data.Paths).Current);
+    }
+
+    [Fact]
+    public void Every_update_that_changes_something_raises_Changed_with_that_update()
+    {
+        var store = new JsonSettingsStore(_data.Paths);
+        var received = new List<AppTheme>();
+        store.Changed += (_, settings) => received.Add(settings.Theme);
+
+        store.Update(s => s with { Theme = AppTheme.Light });
+        store.Update(s => s with { Theme = AppTheme.Light });
+        store.Update(s => s with { Theme = AppTheme.System });
+
+        Assert.Equal(new[] { AppTheme.Light, AppTheme.System }, received);
+    }
+
+    [Fact]
+    public void Update_passes_the_current_settings_to_the_change()
+    {
+        var store = new JsonSettingsStore(_data.Paths);
+        store.Update(s => s with { Theme = AppTheme.Light });
+
+        AppSettings? seen = null;
+        store.Update(s =>
+        {
+            seen = s;
+            return s;
+        });
+
+        Assert.Equal(AppTheme.Light, seen?.Theme);
+    }
+
+    [Fact]
+    public void An_update_after_a_corrupt_file_replaces_it_with_valid_json()
+    {
+        WriteSettingsFile("{ not json");
+        var store = new JsonSettingsStore(_data.Paths);
+
+        store.Update(s => s with { Theme = AppTheme.Light });
+
+        Assert.Equal(AppTheme.Light, new JsonSettingsStore(_data.Paths).Current.Theme);
+    }
+
+    [Fact]
+    public void An_update_creates_the_data_directory_when_it_is_missing()
+    {
+        Assert.False(Directory.Exists(_data.Paths.DataDirectory));
+
+        new JsonSettingsStore(_data.Paths).Update(s => s with { Theme = AppTheme.Light });
+
+        Assert.True(File.Exists(_data.Paths.SettingsPath));
+    }
+
+    [Fact]
+    public void A_failed_save_keeps_the_change_in_memory_and_still_raises_Changed()
+    {
+        // The data directory is occupied by a file, so the settings file can never be written.
+        Directory.CreateDirectory(Path.GetDirectoryName(_data.Paths.DataDirectory)!);
+        File.WriteAllText(_data.Paths.DataDirectory, "in the way");
+        var store = new JsonSettingsStore(_data.Paths);
+        AppSettings? received = null;
+        store.Changed += (_, settings) => received = settings;
+
+        store.Update(s => s with { Theme = AppTheme.Light });
+
+        Assert.Equal(AppTheme.Light, store.Current.Theme);
+        Assert.Equal(AppTheme.Light, received?.Theme);
+    }
+
+    [Theory]
     [InlineData("\"25:99\"")]
     [InlineData("930")]
     [InlineData("null")]
