@@ -13,5 +13,7 @@ internal sealed class TempDataDirectory : IDisposable
     {
         if (Directory.Exists(Paths.DataDirectory))
             Directory.Delete(Paths.DataDirectory, recursive: true);
+        else if (File.Exists(Paths.DataDirectory)) // a test that blocks the folder with a file
+            File.Delete(Paths.DataDirectory);
     }
 }

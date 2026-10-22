@@ -50,6 +50,79 @@ public class OverlayViewModelNavigationTests
     }
 
     [Fact]
+    public void Up_walks_back_through_the_tasks_to_the_input()
+    {
+        var viewModel = CreateWithTasks(2);
+        viewModel.SelectedIndex = 1;
+
+        viewModel.HandleKey(OverlayKey.Up);
+        Assert.Equal((0, OverlayFocus.Input), (viewModel.SelectedIndex, viewModel.Focus));
+
+        viewModel.HandleKey(OverlayKey.Up);
+        Assert.Equal((-1, OverlayFocus.Input), (viewModel.SelectedIndex, viewModel.Focus));
+    }
+
+    [Fact]
+    public void Down_with_a_single_task_cycles_through_three_stops()
+    {
+        var viewModel = CreateWithTasks(1);
+
+        viewModel.HandleKey(OverlayKey.Down);
+        Assert.Equal((0, OverlayFocus.Input), (viewModel.SelectedIndex, viewModel.Focus));
+        viewModel.HandleKey(OverlayKey.Down);
+        Assert.Equal((-1, OverlayFocus.Settings), (viewModel.SelectedIndex, viewModel.Focus));
+        viewModel.HandleKey(OverlayKey.Down);
+        Assert.Equal((-1, OverlayFocus.Input), (viewModel.SelectedIndex, viewModel.Focus));
+    }
+
+    [Fact]
+    public void Without_tasks_up_toggles_between_input_and_settings_too()
+    {
+        var viewModel = CreateWithTasks(0);
+
+        Assert.True(viewModel.HandleKey(OverlayKey.Up));
+        Assert.Equal((-1, OverlayFocus.Settings), (viewModel.SelectedIndex, viewModel.Focus));
+
+        Assert.True(viewModel.HandleKey(OverlayKey.Up));
+        Assert.Equal((-1, OverlayFocus.Input), (viewModel.SelectedIndex, viewModel.Focus));
+    }
+
+    [Fact]
+    public void Tab_from_the_settings_button_wraps_to_the_input_and_shift_tab_goes_to_the_last_task()
+    {
+        var viewModel = CreateWithTasks(2);
+        viewModel.SettingsFocusChanged(focused: true);
+
+        viewModel.HandleKey(OverlayKey.ShiftTab);
+        Assert.Equal((1, OverlayFocus.Input), (viewModel.SelectedIndex, viewModel.Focus));
+
+        viewModel.SettingsFocusChanged(focused: true);
+        viewModel.HandleKey(OverlayKey.Tab);
+        Assert.Equal((-1, OverlayFocus.Input), (viewModel.SelectedIndex, viewModel.Focus));
+    }
+
+    [Fact]
+    public void A_key_the_overlay_does_not_know_is_left_to_the_window()
+    {
+        var viewModel = CreateWithTasks(1);
+
+        Assert.False(viewModel.HandleKey((OverlayKey)999));
+        Assert.Equal((-1, OverlayFocus.Input), (viewModel.SelectedIndex, viewModel.Focus));
+    }
+
+    [Fact]
+    public void Navigation_does_not_clear_what_was_typed()
+    {
+        var viewModel = CreateWithTasks(2);
+        viewModel.InputText = "half a line";
+
+        viewModel.HandleKey(OverlayKey.Down);
+        viewModel.HandleKey(OverlayKey.Up);
+
+        Assert.Equal("half a line", viewModel.InputText);
+    }
+
+    [Fact]
     public void Tab_and_shift_tab_move_like_down_and_up()
     {
         var viewModel = CreateWithTasks(2);
@@ -152,6 +225,43 @@ public class OverlayViewModelNavigationTests
         viewModel.SettingsFocusChanged(focused: false);
 
         Assert.Equal(OverlayFocus.Input, viewModel.Focus);
+    }
+
+    [Fact]
+    public void Focus_leaving_a_button_that_never_had_it_keeps_the_current_focus()
+    {
+        var viewModel = CreateWithTasks(1);
+        viewModel.SelectedIndex = 0;
+
+        viewModel.SettingsFocusChanged(focused: false);
+
+        Assert.Equal(OverlayFocus.Input, viewModel.Focus);
+        Assert.Equal(0, viewModel.SelectedIndex);
+    }
+
+    [Fact]
+    public void Showing_the_overlay_clears_an_error()
+    {
+        var viewModel = CreateWithTasks(0);
+        viewModel.InputText = "buy milk";
+        _fixture.Repository.Fail = true;
+        viewModel.HandleKey(OverlayKey.Enter);
+        Assert.NotEmpty(viewModel.ErrorText);
+
+        viewModel.OnShown();
+
+        Assert.Empty(viewModel.ErrorText);
+    }
+
+    [Fact]
+    public void Showing_the_overlay_keeps_the_typed_text()
+    {
+        var viewModel = CreateWithTasks(0);
+        viewModel.InputText = "unfinished";
+
+        viewModel.OnShown();
+
+        Assert.Equal("unfinished", viewModel.InputText);
     }
 
     [Fact]

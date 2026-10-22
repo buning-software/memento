@@ -70,6 +70,128 @@ public class OverlayViewModelEditingTests
     }
 
     [Fact]
+    public void Enter_on_unchanged_text_ends_the_edit_and_keeps_the_task_as_it_was()
+    {
+        var before = _fixture.Repository.Tasks.Single();
+        _viewModel.HandleKey(OverlayKey.F2);
+
+        _viewModel.HandleKey(OverlayKey.Enter);
+
+        Assert.False(_viewModel.IsEditing);
+        Assert.Equal(before, Assert.Single(_fixture.Repository.Tasks));
+        Assert.Equal(0, _viewModel.SelectedIndex);
+        Assert.Empty(_viewModel.ErrorText);
+    }
+
+    [Fact]
+    public void Enter_on_an_emptied_editor_keeps_editing()
+    {
+        _viewModel.HandleKey(OverlayKey.F2);
+        Row.EditText = "";
+
+        _viewModel.HandleKey(OverlayKey.Enter);
+
+        Assert.True(_viewModel.IsEditing);
+        Assert.Equal("call Anna", Assert.Single(_fixture.Repository.Tasks).Title);
+    }
+
+    [Fact]
+    public void A_line_without_a_title_in_the_editor_asks_for_a_title()
+    {
+        _viewModel.HandleKey(OverlayKey.F2);
+
+        Row.EditText = "#work";
+
+        Assert.Equal("Add a title", _viewModel.PreviewHint);
+    }
+
+    [Fact]
+    public void Editing_only_the_tags_saves_the_task_and_lists_the_new_tags()
+    {
+        _viewModel.HandleKey(OverlayKey.F2);
+        Row.EditText = "call Anna tomorrow 3pm #home";
+
+        _viewModel.HandleKey(OverlayKey.Enter);
+
+        Assert.Equal("#home", _viewModel.Tasks[0].TagsText);
+        Assert.Equal("tomorrow 15:00", _viewModel.Tasks[0].DeadlineText);
+    }
+
+    [Fact]
+    public void Saving_an_edit_that_moves_the_task_down_keeps_it_selected()
+    {
+        var first = _fixture.AddTask("a", new DateTime(2026, 10, 13, 11, 0, 0));
+        _fixture.AddTask("b", new DateTime(2026, 10, 13, 12, 0, 0));
+        _viewModel.Refresh();
+        Assert.Equal(first.Id, Row.Item.Id); // today 11:00 sorts before the captured task of tomorrow
+        _viewModel.SelectedIndex = 0;
+        _viewModel.HandleKey(OverlayKey.F2);
+
+        Row.EditText = "a 2026-10-20 09:00";
+        _viewModel.HandleKey(OverlayKey.Enter);
+
+        Assert.Equal(_viewModel.Tasks.Count - 1, _viewModel.SelectedIndex);
+        Assert.Equal(first.Id, _viewModel.Tasks[_viewModel.SelectedIndex].Item.Id);
+    }
+
+    [Fact]
+    public void A_task_stored_without_its_original_text_is_edited_from_a_rebuilt_line()
+    {
+        _fixture.AddTask("report", new DateTime(2026, 10, 12, 9, 0, 0), "work");
+        _viewModel.Refresh();
+        _viewModel.SelectedIndex = 0; // the oldest deadline comes first
+
+        _viewModel.HandleKey(OverlayKey.F2);
+
+        Assert.Equal("report 2026-10-12 09:00 #work", Row.EditText);
+    }
+
+    [Fact]
+    public void Escape_after_a_failed_save_clears_the_error_and_stops_editing()
+    {
+        _viewModel.HandleKey(OverlayKey.F2);
+        Row.EditText = "call Bob";
+        _fixture.Repository.Fail = true;
+        _viewModel.HandleKey(OverlayKey.Enter);
+        Assert.NotEmpty(_viewModel.ErrorText);
+
+        _viewModel.HandleKey(OverlayKey.Escape);
+
+        Assert.False(_viewModel.IsEditing);
+        Assert.Empty(_viewModel.ErrorText);
+    }
+
+    [Fact]
+    public void A_successful_save_after_a_failed_one_clears_the_error()
+    {
+        _viewModel.HandleKey(OverlayKey.F2);
+        Row.EditText = "call Bob";
+        _fixture.Repository.Fail = true;
+        _viewModel.HandleKey(OverlayKey.Enter);
+        _fixture.Repository.Fail = false;
+
+        _viewModel.HandleKey(OverlayKey.Enter);
+
+        Assert.Empty(_viewModel.ErrorText);
+        Assert.False(_viewModel.IsEditing);
+        Assert.Equal("call Bob", Assert.Single(_fixture.Repository.Tasks).Title);
+    }
+
+    [Fact]
+    public void Editing_notifies_that_the_hints_changed()
+    {
+        var changed = new List<string?>();
+        _viewModel.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        _viewModel.HandleKey(OverlayKey.F2);
+
+        Assert.Contains(nameof(OverlayViewModel.IsEditing), changed);
+        Assert.Contains(nameof(OverlayViewModel.EnterHint), changed);
+        Assert.Contains(nameof(OverlayViewModel.EscapeHint), changed);
+        Assert.Contains(nameof(OverlayViewModel.ShowEditHint), changed);
+    }
+
+    [Fact]
     public void Space_while_editing_is_left_to_the_editor()
     {
         _viewModel.HandleKey(OverlayKey.F2);

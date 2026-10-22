@@ -2,6 +2,7 @@ using Microsoft.Extensions.Time.Testing;
 using Memento.Core.Enumerations;
 using Memento.Core.Reminders.Models;
 using Memento.Core.Reminders.Services;
+using Memento.Core.Storage;
 using Memento.Core.Tasks.Models;
 using Memento.Core.UnitTests.TestSupport;
 using static Memento.Core.UnitTests.TestSupport.TestClock;
@@ -155,6 +156,131 @@ public class DeadlineReminderServiceTests
 
         Assert.Equal(ReminderKind.DueNow, Assert.Single(_service.TakeDue()).Kind);
         Assert.Empty(_service.TakeDue());
+    }
+
+    [Theory]
+    [InlineData(16, null)]                       // one minute before the lead time starts
+    [InlineData(15, ReminderKind.Upcoming)]      // exactly the lead time before the deadline
+    [InlineData(1, ReminderKind.Upcoming)]
+    [InlineData(0, ReminderKind.DueNow)]         // exactly at the deadline
+    [InlineData(-1, ReminderKind.DueNow)]
+    [InlineData(-15, ReminderKind.DueNow)]       // exactly the lead time after the deadline
+    [InlineData(-16, null)]                      // one minute too late
+    public void The_kind_depends_on_how_far_the_deadline_is_from_now_at_the_exact_boundaries(int minutesUntilDeadline, ReminderKind? expected)
+    {
+        AddTask("a", Now.AddMinutes(minutesUntilDeadline));
+
+        var due = _service.TakeDue();
+
+        Assert.Equal(expected, due.Select(reminder => (ReminderKind?)reminder.Kind).SingleOrDefault());
+    }
+
+    [Fact]
+    public void Deadlines_one_second_outside_the_window_are_not_due()
+    {
+        AddTask("early", Now.AddMinutes(15).AddSeconds(1));
+        AddTask("late", Now.AddMinutes(-15).AddSeconds(-1));
+
+        Assert.Empty(_service.TakeDue());
+    }
+
+    [Fact]
+    public void Without_a_lead_time_only_the_moment_of_the_deadline_is_due()
+    {
+        _settings.Update(s => s with { ReminderLeadMinutes = 0 });
+        AddTask("a", Now.AddMinutes(1));
+
+        Assert.Empty(_service.TakeDue());
+
+        _time.Advance(TimeSpan.FromMinutes(1));
+        Assert.Equal(ReminderKind.DueNow, Assert.Single(_service.TakeDue()).Kind);
+
+        _time.Advance(TimeSpan.FromSeconds(1));
+        Assert.Empty(_service.TakeDue());
+    }
+
+    [Fact]
+    public void An_upcoming_reminder_followed_by_a_long_sleep_gives_no_due_now_reminder()
+    {
+        AddTask("a", At("2026-10-13T10:10"));
+        Assert.Equal(ReminderKind.Upcoming, Assert.Single(_service.TakeDue()).Kind);
+
+        _time.Advance(TimeSpan.FromHours(2));
+
+        Assert.Empty(_service.TakeDue());
+    }
+
+    [Fact]
+    public void Every_task_in_its_window_gets_its_own_reminder()
+    {
+        AddTask("soon", At("2026-10-13T10:05"));
+        AddTask("now", At("2026-10-13T10:00"));
+        AddTask("later", At("2026-10-13T12:00"));
+
+        var due = _service.TakeDue();
+
+        Assert.Equal(new[] { "now", "soon" }, due.Select(reminder => reminder.Task.Id).Order());
+    }
+
+    [Fact]
+    public void Reminders_that_were_off_are_handed_out_once_they_are_switched_on()
+    {
+        _settings.Update(s => s with { RemindersEnabled = false });
+        AddTask("a", At("2026-10-13T10:05"));
+        Assert.Empty(_service.TakeDue());
+
+        _settings.Update(s => s with { RemindersEnabled = true });
+
+        Assert.Single(_service.TakeDue());
+    }
+
+    [Fact]
+    public void A_task_that_is_completed_and_reopened_is_reminded_about_again()
+    {
+        AddTask("a", At("2026-10-13T10:05"));
+        Assert.Single(_service.TakeDue());
+
+        _repository.SetStatus("a", TaskItemStatus.Completed);
+        Assert.Empty(_service.TakeDue());
+
+        _repository.SetStatus("a", TaskItemStatus.Open);
+        Assert.Single(_service.TakeDue());
+    }
+
+    [Fact]
+    public void Without_open_tasks_nothing_is_due()
+    {
+        Assert.Empty(_service.TakeDue());
+    }
+
+    [Fact]
+    public void Broken_storage_is_not_swallowed()
+    {
+        AddTask("a", At("2026-10-13T10:05"));
+        _repository.Fail = true;
+
+        Assert.Throws<StorageException>(() => _service.TakeDue());
+    }
+
+    [Fact]
+    public void Disabled_reminders_do_not_touch_a_broken_storage()
+    {
+        _settings.Update(s => s with { RemindersEnabled = false });
+        _repository.Fail = true;
+
+        Assert.Empty(_service.TakeDue());
+    }
+
+    [Fact]
+    public void After_a_storage_failure_the_next_call_hands_out_what_was_due()
+    {
+        AddTask("a", At("2026-10-13T10:05"));
+        _repository.Fail = true;
+        Assert.Throws<StorageException>(() => _service.TakeDue());
+
+        _repository.Fail = false;
+
+        Assert.Equal("a", Assert.Single(_service.TakeDue()).Task.Id);
     }
 
     [Fact]

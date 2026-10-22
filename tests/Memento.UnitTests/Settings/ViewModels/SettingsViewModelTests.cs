@@ -104,6 +104,115 @@ public class SettingsViewModelTests
     }
 
     [Fact]
+    public void Standard_options_are_not_duplicated_when_the_configured_value_is_one_of_them()
+    {
+        var viewModel = CreateViewModel(); // 08:30 and 15 minutes are both standard choices
+
+        Assert.Equal(36, viewModel.DefaultTimeOptions.Count);
+        Assert.Equal(new[] { 5, 10, 15, 30, 60 }, viewModel.ReminderLeadOptions);
+    }
+
+    [Theory]
+    [InlineData(5, 0)]
+    [InlineData(23, 45)]
+    public void A_custom_default_time_outside_the_standard_range_is_added_in_order(int hour, int minute)
+    {
+        var custom = new TimeOnly(hour, minute);
+        _settings.Update(s => s with { DefaultTime = custom });
+
+        var options = CreateViewModel().DefaultTimeOptions;
+
+        Assert.Equal(37, options.Count);
+        Assert.Contains(custom, options);
+        Assert.Equal(options.Order(), options);
+    }
+
+    [Theory]
+    [InlineData(1, new[] { 1, 5, 10, 15, 30, 60 })]
+    [InlineData(120, new[] { 5, 10, 15, 30, 60, 120 })]
+    public void A_custom_reminder_lead_time_is_added_in_order(int minutes, int[] expected)
+    {
+        _settings.Update(s => s with { ReminderLeadMinutes = minutes });
+
+        Assert.Equal(expected, CreateViewModel().ReminderLeadOptions);
+    }
+
+    [Fact]
+    public void Setting_a_value_to_what_it_already_is_saves_nothing()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.Theme = AppTheme.System;
+        viewModel.Monitor = OverlayMonitor.Cursor;
+        viewModel.DefaultTime = new TimeOnly(8, 30);
+        viewModel.RemindersEnabled = true;
+        viewModel.ReminderLeadMinutes = 15;
+
+        Assert.Equal(0, _settings.UpdateCount);
+    }
+
+    [Fact]
+    public void Each_changed_setting_is_saved_once()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.Theme = AppTheme.Light;
+        viewModel.RemindersEnabled = false;
+
+        Assert.Equal(2, _settings.UpdateCount);
+    }
+
+    [Fact]
+    public void Changing_one_setting_leaves_the_others_as_they_were()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.Theme = AppTheme.Light;
+
+        Assert.Equal(OverlayMonitor.Cursor, _settings.Current.Monitor);
+        Assert.Equal(new TimeOnly(8, 30), _settings.Current.DefaultTime);
+        Assert.Equal(Hotkey.Default, _settings.Current.Hotkey);
+    }
+
+    [Fact]
+    public void Toggling_start_with_windows_on_enables_autostart()
+    {
+        _autostart.Enabled = false;
+        var viewModel = CreateViewModel();
+        Assert.False(viewModel.StartWithWindows);
+
+        viewModel.StartWithWindows = true;
+
+        Assert.True(_autostart.Enabled);
+        Assert.True(viewModel.IsAutostartAvailable);
+    }
+
+    [Fact]
+    public void A_refused_autostart_change_saves_no_settings()
+    {
+        var viewModel = CreateViewModel();
+        _autostart.Blocked = true;
+
+        viewModel.StartWithWindows = false;
+
+        Assert.Equal(0, _settings.UpdateCount);
+    }
+
+    [Fact]
+    public void Blocked_autostart_at_the_start_leaves_the_switch_off()
+    {
+        _autostart.Blocked = true;
+
+        Assert.False(CreateViewModel().StartWithWindows);
+    }
+
+    [Fact]
+    public void Available_autostart_has_its_normal_description()
+    {
+        Assert.Equal("Launch in the tray when you sign in.", CreateViewModel().AutostartDescription);
+    }
+
+    [Fact]
     public void Toggling_start_with_windows_changes_autostart()
     {
         var viewModel = CreateViewModel();
@@ -198,6 +307,62 @@ public class SettingsViewModelTests
         viewModel.StartRecording();
 
         Assert.Null(viewModel.ShortcutError);
+    }
+
+    [Fact]
+    public void Applying_the_active_shortcut_again_succeeds_without_saving()
+    {
+        var viewModel = CreateViewModel();
+        viewModel.StartRecording();
+
+        viewModel.ApplyShortcut(Hotkey.Default);
+
+        Assert.Null(viewModel.ShortcutError);
+        Assert.Equal("Ctrl+Shift+Space", viewModel.ShortcutText);
+        Assert.False(viewModel.IsRecordingShortcut);
+        Assert.Equal(0, _settings.UpdateCount);
+    }
+
+    [Fact]
+    public void A_shortcut_without_a_modifier_changes_nothing()
+    {
+        var viewModel = CreateViewModel();
+        viewModel.StartRecording();
+
+        viewModel.ApplyShortcut(new Hotkey(HotkeyModifiers.None, 0x4D));
+
+        Assert.Equal(0, _settings.UpdateCount);
+        Assert.Equal("Press a shortcut…", viewModel.ShortcutText);
+        Assert.Single(_registrar.Registered);
+    }
+
+    [Fact]
+    public void A_free_shortcut_after_a_refused_one_clears_the_error()
+    {
+        _registrar.TakenByOtherApps.Add(CtrlAltM);
+        var viewModel = CreateViewModel();
+        viewModel.StartRecording();
+        viewModel.ApplyShortcut(CtrlAltM);
+        Assert.NotNull(viewModel.ShortcutError);
+
+        _registrar.TakenByOtherApps.Clear();
+        viewModel.StartRecording();
+        viewModel.ApplyShortcut(CtrlAltM);
+
+        Assert.Null(viewModel.ShortcutError);
+        Assert.Equal("Ctrl+Alt+M", viewModel.ShortcutText);
+    }
+
+    [Fact]
+    public void Stopping_the_recording_shows_the_current_shortcut_again()
+    {
+        var viewModel = CreateViewModel();
+        viewModel.StartRecording();
+
+        viewModel.StopRecording();
+
+        Assert.False(viewModel.IsRecordingShortcut);
+        Assert.Equal("Ctrl+Shift+Space", viewModel.ShortcutText);
     }
 
     [Fact]
