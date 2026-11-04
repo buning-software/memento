@@ -12,12 +12,8 @@ inputs:
     description: Assembly version of the app, for example 1.2.3. Leave empty to keep the project default.
     required: false
     default: ''
-  certificate-path:
-    description: Path of the .pfx to sign with. Leave empty to build an unsigned package.
-    required: false
-    default: ''
-  certificate-password:
-    description: Password of the .pfx.
+  certificate-thumbprint:
+    description: Thumbprint of a certificate in Cert:\CurrentUser\My to sign with. Leave empty to build an unsigned package.
     required: false
     default: ''
   output-directory:
@@ -45,8 +41,7 @@ runs:
         PLATFORM: ${{ inputs.platform }}
         RID: ${{ inputs.rid }}
         VERSION: ${{ inputs.version }}
-        CERT_PATH: ${{ inputs.certificate-path }}
-        CERT_PASSWORD: ${{ inputs.certificate-password }}
+        CERT_THUMBPRINT: ${{ inputs.certificate-thumbprint }}
         OUTPUT_DIRECTORY: ${{ inputs.output-directory }}
       run: |
         $workspace = if ($env:GITHUB_WORKSPACE) { $env:GITHUB_WORKSPACE } else { (Get-Location).Path }
@@ -59,10 +54,9 @@ runs:
           "-p:AppxPackageDir=$packageDir\",
           '-p:AppxBundle=Never')
         if ($env:VERSION) { $publishArgs += "-p:Version=$env:VERSION" }
-        if ($env:CERT_PATH) {
+        if ($env:CERT_THUMBPRINT) {
           $publishArgs += '-p:AppxPackageSigningEnabled=true',
-            "-p:PackageCertificateKeyFile=$env:CERT_PATH",
-            "-p:PackageCertificatePassword=$env:CERT_PASSWORD",
+            "-p:PackageCertificateThumbprint=$env:CERT_THUMBPRINT",
             '-p:AppxPackageSigningTimestampDigestAlgorithm=SHA256',
             '-p:AppxPackageSigningTimestampServerUrl=http://timestamp.digicert.com'
         }
