@@ -1,7 +1,7 @@
 using Memento.UiTests.Application;
-using NUnit.Framework;
+using Memento.UiTests.Application.Views;
+using Memento.UiTests.Fixtures;
 using WinUia.Input;
-using static WinUia.NUnit.UiAssertions;
 
 namespace Memento.UiTests.Tests;
 

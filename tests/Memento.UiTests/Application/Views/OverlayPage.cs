@@ -1,7 +1,7 @@
 using WinUia;
 using WinUia.Input;
 
-namespace Memento.UiTests.Application;
+namespace Memento.UiTests.Application.Views;
 
 /// <summary>The capture overlay: input box, open tasks and the Settings button.</summary>
 public sealed class OverlayPage(Element window)

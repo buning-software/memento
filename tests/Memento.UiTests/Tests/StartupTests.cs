@@ -1,8 +1,6 @@
 using System.Diagnostics;
 using Memento.UiTests.Application;
-using NUnit.Framework;
 using WinUia;
-using static WinUia.NUnit.UiAssertions;
 
 namespace Memento.UiTests.Tests;
 
@@ -55,7 +53,7 @@ public class StartupTests
         Assert.That(UiText.In(dialog!), Has.Some.Contain("The database could not be initialized"));
 
         dialog!.Find(e => e.ControlType == ControlType.Button).Click(); // OK
-        Eventually(() => app.Process.HasExited, "Memento exits after the message is dismissed");
+        Assert.That(Poll.Until(() => app.Process.HasExited), Is.True, "Memento exits after the message is dismissed");
         Assert.That(app.Process.ExitCode, Is.EqualTo(1));
     }
 }

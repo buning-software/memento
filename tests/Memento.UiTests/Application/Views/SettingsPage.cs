@@ -1,6 +1,6 @@
 using WinUia;
 
-namespace Memento.UiTests.Application;
+namespace Memento.UiTests.Application.Views;
 
 public sealed class SettingsPage(Element window)
 {

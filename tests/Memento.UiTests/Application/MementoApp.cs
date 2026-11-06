@@ -1,3 +1,4 @@
+using Memento.UiTests.Application.Views;
 using System.Linq.Expressions;
 using System.Reflection;
 using WinUia;
