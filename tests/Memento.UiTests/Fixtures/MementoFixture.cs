@@ -1,7 +1,7 @@
 using Memento.UiTests.Application;
-using NUnit.Framework;
+using WinUia;
 
-namespace Memento.UiTests.Tests;
+namespace Memento.UiTests.Fixtures;
 
 /// <summary>Launches a fresh Memento on an empty data folder for every test and closes it afterwards.</summary>
 public abstract class MementoFixture
@@ -35,6 +35,10 @@ public abstract class MementoFixture
         App.Dispose();
         App = Launch();
     }
+
+    /// <summary>Fails the test unless <paramref name="condition"/> becomes true within WinUia's default timeout.</summary>
+    protected static void Eventually(Func<bool> condition, string because = "") =>
+        Assert.That(Poll.Until(condition), Is.True, because);
 
     private MementoApp Launch() => MementoApp.Launch(Data);
 }
