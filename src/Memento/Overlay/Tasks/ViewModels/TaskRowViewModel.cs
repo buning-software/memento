@@ -17,6 +17,9 @@ public sealed partial class TaskRowViewModel(TaskItem item, DeadlineFormatter de
 
     public bool IsOverdue => Item.Deadline is { } deadline && deadlines.IsOverdue(deadline);
 
+    /// <summary>True on the first task without a deadline when tasks with a deadline precede it: a divider is drawn above the row.</summary>
+    public bool ShowSeparator { get; init; }
+
     [ObservableProperty]
     public partial bool IsEditing { get; set; }
 

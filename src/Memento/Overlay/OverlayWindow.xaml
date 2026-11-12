@@ -72,14 +72,20 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
-                        <Border x:Name="Row" CornerRadius="4" Background="Transparent">
-                            <Grid>
-                                <Border x:Name="Indicator" Width="3" Height="16" CornerRadius="1.5"
-                                        HorizontalAlignment="Left" VerticalAlignment="Center" Margin="3,0,0,0"
-                                        Background="{DynamicResource AccentFillColorDefaultBrush}" Visibility="Collapsed" />
-                                <ContentPresenter />
-                            </Grid>
-                        </Border>
+                        <StackPanel>
+                            <!-- Divider between tasks with a deadline and those without. -->
+                            <Rectangle Height="1" Margin="12,4,12,5"
+                                       Fill="{DynamicResource DividerStrokeColorDefaultBrush}"
+                                       Visibility="{Binding ShowSeparator, Converter={StaticResource BoolToVisibility}}" />
+                            <Border x:Name="Row" CornerRadius="4" Background="Transparent">
+                                <Grid>
+                                    <Border x:Name="Indicator" Width="3" Height="16" CornerRadius="1.5"
+                                            HorizontalAlignment="Left" VerticalAlignment="Center" Margin="3,0,0,0"
+                                            Background="{DynamicResource AccentFillColorDefaultBrush}" Visibility="Collapsed" />
+                                    <ContentPresenter />
+                                </Grid>
+                            </Border>
+                        </StackPanel>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Row" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
@@ -158,9 +164,17 @@
         </DataTemplate>
     </ui:FluentWindow.Resources>
 
-    <StackPanel>
+    <!-- The list row is the only star row: the window grows with the list until its MaxHeight (set in code), then the list scrolls. -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
         <!-- Input bar: stock WinUI 3 TextBox (rounded border, subtle fill, accent underline on focus) -->
-        <Grid Margin="12">
+        <Grid Grid.Row="0" Margin="12">
             <ui:TextBox x:Name="InputBox"
                         FocusVisualStyle="{x:Null}"
                         AutomationProperties.Name="New task"
@@ -176,9 +190,13 @@
         </Grid>
 
         <!-- Task list -->
-        <StackPanel Visibility="{Binding HasTasks, Converter={StaticResource BoolToVisibility}}">
+        <Grid Grid.Row="1" Visibility="{Binding HasTasks, Converter={StaticResource BoolToVisibility}}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
             <Rectangle Height="1" Fill="{DynamicResource DividerStrokeColorDefaultBrush}" />
-            <ScrollViewer MaxHeight="280" VerticalScrollBarVisibility="Auto" Padding="0,4">
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0,4">
                 <ListBox x:Name="TaskList"
                          Background="Transparent"
                          BorderThickness="0"
@@ -194,12 +212,12 @@
                          ItemContainerStyle="{StaticResource TaskRowStyle}"
                          SelectionChanged="TaskList_SelectionChanged" />
             </ScrollViewer>
-        </StackPanel>
+        </Grid>
 
-        <Rectangle Height="1" Fill="{DynamicResource DividerStrokeColorDefaultBrush}" />
+        <Rectangle Grid.Row="2" Height="1" Fill="{DynamicResource DividerStrokeColorDefaultBrush}" />
 
         <!-- Hint bar -->
-        <Grid Height="40" Margin="8,0,16,0">
+        <Grid Grid.Row="3" Height="40" Margin="8,0,16,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -263,5 +281,5 @@
                 <TextBlock Style="{StaticResource HintText}" Margin="6,0,0,0" Text="{Binding EscapeHint}" />
             </StackPanel>
         </Grid>
-    </StackPanel>
+    </Grid>
 </ui:FluentWindow>
