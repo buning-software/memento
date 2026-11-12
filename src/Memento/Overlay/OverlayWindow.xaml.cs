@@ -23,6 +23,9 @@ namespace Memento.Overlay;
 /// </summary>
 public partial class OverlayWindow : FluentWindow
 {
+    /// <summary>Tallest the overlay may grow, as a fraction of the work area height; the list scrolls beyond that.</summary>
+    private const double MaxHeightRatio = 0.8;
+
     /// <summary>Distance from the top of the screen, as a fraction of the work area height.</summary>
     private const double TopOffsetRatio = 0.18;
 
@@ -111,6 +114,8 @@ public partial class OverlayWindow : FluentWindow
 
         double leftPx = area.Left + (area.Width - Width * monitorScale) / 2;
         double topPx = area.Top + area.Height * TopOffsetRatio;
+
+        MaxHeight = area.Height * MaxHeightRatio / windowScale;
 
         // Window.Left/Top are in DIPs of the window's current DPI.
         Left = leftPx / windowScale;

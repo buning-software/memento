@@ -137,8 +137,17 @@ public sealed partial class OverlayViewModel : ObservableObject
         Tasks.Clear();
         try
         {
+            // The repository lists tasks with a deadline first; a divider marks where the ones without begin.
+            bool seenDeadline = false;
+            bool separated = false;
             foreach (var task in _tasks.GetOpen(MaxListedTasks))
-                Tasks.Add(new TaskRowViewModel(task, _deadlines));
+            {
+                bool hasDeadline = task.Deadline is not null;
+                bool separate = seenDeadline && !hasDeadline && !separated;
+                seenDeadline |= hasDeadline;
+                separated |= separate;
+                Tasks.Add(new TaskRowViewModel(task, _deadlines) { ShowSeparator = separate });
+            }
         }
         catch (StorageException)
         {
