@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <!-- The 10.0.19041 Windows SDK adds the WinRT StartupTask API, used for "Start with Windows" in the MSIX build. -->
-    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <TargetFramework>net11.0-windows10.0.19041.0</TargetFramework>
     <UseWPF>true</UseWPF>
     <!-- Only for NotifyIcon (tray) and Screen (monitor work areas). -->
     <UseWindowsForms>true</UseWindowsForms>

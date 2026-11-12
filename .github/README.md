@@ -61,7 +61,7 @@ Memento reads the deadline and the tags from the line as you type, stores the ta
 
 ### Built With
 
-* [.NET 10](https://dotnet.microsoft.com/) and WPF
+* [.NET 11](https://dotnet.microsoft.com/) and WPF
 * [WPF-UI](https://github.com/lepoco/wpfui) for the Fluent design
 * [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet)
 * [Entity Framework Core](https://learn.microsoft.com/ef/core/) with SQLite
@@ -71,7 +71,7 @@ Memento reads the deadline and the tags from the line as you type, stores the ta
 ### Prerequisites
 
 * Windows 10 (version 2004 or later) or Windows 11
-* [.NET 10 SDK](https://dotnet.microsoft.com/download), only to build from source
+* [.NET 11 SDK](https://dotnet.microsoft.com/download), only to build from source
 
 ### Installation
 
