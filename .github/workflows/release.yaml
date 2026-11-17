@@ -10,10 +10,11 @@ permissions:
 jobs:
   test:
     uses: ./.github/workflows/build-and-test.yaml
+    with:
+      record-all-tests: true
 
   release:
     needs: test
-    # The app is WPF: it only builds on Windows.
     runs-on: windows-latest
     strategy:
       matrix:
@@ -55,8 +56,6 @@ jobs:
       - name: Setup .NET environment
         uses: ./.github/actions/setup-dotnet-env
 
-      # The MSIX tooling cannot import a password-protected .pfx itself (APPX0105), so import it into the
-      # user's certificate store and sign by thumbprint.
       - name: Install signing certificate
         id: certificate
         shell: pwsh

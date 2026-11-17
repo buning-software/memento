@@ -64,3 +64,6 @@ nunit-*.xml
 *.pfx
 *.msix
 *.cer
+
+# UI test screen recordings (WinUia.Recording)
+TestResults/

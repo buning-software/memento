@@ -3,7 +3,12 @@ name: Build and test
 on:
   pull_request:
   workflow_dispatch:
-  workflow_call: {}
+  workflow_call:
+    inputs:
+      record-all-tests:
+        description: Upload the screen recording of every UI test, not only the failed ones
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -12,7 +17,6 @@ concurrency:
 jobs:
   build:
     name: Build
-    # The app is WPF: it only builds and runs on Windows.
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -57,7 +61,6 @@ jobs:
         with:
           name: build-output
 
-      # One run per project: the unit tests are xUnit, the UI tests NUnit, and only the UI tests carry Category=UI.
       - name: Unit test
         run: |
           foreach ($project in Get-ChildItem tests -Filter *.UnitTests.csproj -Recurse) {
@@ -68,7 +71,6 @@ jobs:
   ui-test:
     name: Run UI tests
     needs: build
-    # Drives the real app through UI Automation: needs the interactive desktop that hosted Windows runners provide.
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -86,8 +88,38 @@ jobs:
         with:
           name: build-output
 
+      - name: Ensure ffmpeg
+        shell: pwsh
+        run: |
+          if (-not (Get-Command ffmpeg -ErrorAction SilentlyContinue)) {
+            choco install ffmpeg --no-progress -y
+          }
+          $ffmpeg = (Get-Command ffmpeg).Source
+          Write-Host "ffmpeg: $ffmpeg"
+          "WINUIA_FFMPEG=$ffmpeg" >> $env:GITHUB_ENV
+
       - name: UI test
         run: dotnet test --project tests/Memento.UiTests --no-build --configuration Release
+
+      - name: Collect recordings
+        if: always()
+        shell: pwsh
+        env:
+          KIND: ${{ inputs.record-all-tests && 'All' || 'Failed' }}
+        run: |
+          New-Item -ItemType Directory -Force recordings | Out-Null
+          Get-ChildItem tests -Recurse -Directory -Filter $env:KIND -ErrorAction SilentlyContinue |
+            Where-Object { $_.Parent.Name -eq 'Recordings' } |
+            ForEach-Object { Copy-Item (Join-Path $_.FullName '*') recordings -Force }
+
+      - name: Upload recordings
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-test-recordings
+          path: recordings
+          if-no-files-found: ignore
+          retention-days: 14
 
   package:
     name: Package MSIX
@@ -100,8 +132,6 @@ jobs:
       - name: Setup .NET environment
         uses: ./.github/actions/setup-dotnet-env
 
-      # Catches a broken manifest or packaging setup early, with an unsigned x64 package. The release workflow
-      # calls this workflow for its tests, so it checks the packaging before it builds and signs the real ones.
       - name: Package MSIX
         uses: ./.github/actions/package-msix
         with:
