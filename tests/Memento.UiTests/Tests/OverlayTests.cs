@@ -28,7 +28,7 @@ public class OverlayTests : MementoFixture
     }
 
     [Test]
-    public void TypingATask_ShowsWhatWasRecognisedBeforeSaving()
+    public void Typing_ShowsPreview()
     {
         var overlay = App.OpenOverlay();
 
@@ -81,7 +81,7 @@ public class OverlayTests : MementoFixture
     }
 
     [Test]
-    public void DownArrow_WalksFromInputThroughTasksToSettings()
+    public void DownArrow_WalksToSettings()
     {
         var overlay = App.OpenOverlay();
         overlay.Type(Task);
@@ -129,7 +129,7 @@ public class OverlayTests : MementoFixture
     }
 
     [Test]
-    public void LineWithoutATitle_AsksForOneAndSavesNothing()
+    public void NoTitle_SavesNothing()
     {
         var overlay = App.OpenOverlay();
 
@@ -168,7 +168,7 @@ public class OverlayTests : MementoFixture
     }
 
     [Test]
-    public void UpArrow_FromTheInput_GoesToTheSettingsButton()
+    public void UpArrow_FromInput_GoesToSettings()
     {
         var overlay = App.OpenOverlay();
 
@@ -178,7 +178,7 @@ public class OverlayTests : MementoFixture
     }
 
     [Test]
-    public void UpArrow_FromTheSettingsButton_ReturnsToTheLastTask()
+    public void UpArrow_FromSettings_GoesToTask()
     {
         var overlay = App.OpenOverlay();
         overlay.Type(Task);
@@ -223,7 +223,7 @@ public class OverlayTests : MementoFixture
     }
 
     [Test]
-    public void Escape_WhileEditing_CancelsTheEditAndKeepsTheOverlayOpen()
+    public void Escape_WhileEditing_Cancels()
     {
         var overlay = App.OpenOverlay();
         overlay.Type(Task);
