@@ -21,6 +21,7 @@
     <PackageReference Include="NUnit3TestAdapter" />
     <PackageReference Include="NUnit.Analyzers" PrivateAssets="all" />
     <PackageReference Include="WinUia" />
+    <PackageReference Include="WinUia.Recording" />
   </ItemGroup>
   <ItemGroup>
     <!-- Builds the app first (same configuration) without referencing its assembly: the tests launch the exe. -->

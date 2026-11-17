@@ -22,7 +22,7 @@ public class SettingsTests : MementoFixture
     }
 
     [Test]
-    public void OpeningSettingsAgain_ReusesTheOpenWindow()
+    public void SettingsAgain_ReusesWindow()
     {
         OpenSettings();
 
@@ -67,7 +67,7 @@ public class SettingsTests : MementoFixture
     }
 
     [Test]
-    public void Shortcut_IsSavedAfterPressingTheNewCombination()
+    public void Shortcut_IsSaved()
     {
         var settings = OpenSettings();
 
@@ -89,7 +89,7 @@ public class SettingsTests : MementoFixture
     }
 
     [Test]
-    public void ClosingSettings_ReturnsToTheOverlayAsFreshlyOpened()
+    public void CloseSettings_ResetsOverlay()
     {
         var settings = OpenSettings();
 
@@ -112,7 +112,7 @@ public class SettingsTests : MementoFixture
     }
 
     [Test]
-    public void Escape_WhileRecordingAShortcut_OnlyCancelsTheRecording()
+    public void Escape_WhileRecording_Cancels()
     {
         var settings = OpenSettings();
         settings.ShortcutButton.Click();

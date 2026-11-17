@@ -8,7 +8,7 @@ namespace Memento.UiTests.Tests;
 public class StartupTests
 {
     [Test]
-    public void SecondLaunch_ExitsAndLeavesTheFirstRunning()
+    public void SecondLaunch_Exits()
     {
         using var data = new TestDataDirectory();
         using var first = MementoApp.Launch(data);
@@ -26,7 +26,7 @@ public class StartupTests
     }
 
     [Test]
-    public void ShortcutAnotherApplicationHolds_IsReportedAtStartup()
+    public void TakenShortcut_IsReported()
     {
         using var data = new TestDataDirectory();
         using var taken = NativeInput.ReserveHotkey(NativeInput.CtrlAltShift, NativeInput.KeySpace);

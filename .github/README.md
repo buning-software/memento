@@ -124,7 +124,7 @@ A modular monolith in three projects; the dependencies point one way only: `Meme
 | `tests/Memento.Core.UnitTests` | Unit tests for Core. `TestSupport/` holds the shared fakes. |
 | `tests/Memento.EntityFramework.UnitTests` | Tests for the data layer against real SQLite files in a temp folder. |
 | `tests/Memento.UnitTests` | Unit tests for the view models and presentation helpers. |
-| `tests/Memento.UiTests` | End-to-end tests that launch the built `Memento.exe` and drive it through UI Automation with [WinUia](https://github.com/buning-software/win-uia) and NUnit. |
+| `tests/Memento.UiTests` | End-to-end tests that launch the built `Memento.exe` and drive it through UI Automation with [WinUia](https://github.com/buning-software/win-uia) and NUnit. Every run is screen-recorded with [ffmpeg](https://ffmpeg.org) (on `PATH` or `WINUIA_FFMPEG`) to `TestResults/Recordings/All`, failed tests also to `.../Failed`. CI uploads only the failed ones on a pull request and all of them on a release. |
 
 Views only bind to view models. View models and services reach the outside world through small interfaces (`ITaskRepository`, `ISettingsStore`, `IHotkeyRegistrar`, `IDialogService`, `IAutostart`, `IShellLauncher`) and `TimeProvider`, so the behaviour is tested without windows, disk or registry.
 

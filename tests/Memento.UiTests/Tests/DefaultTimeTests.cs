@@ -9,7 +9,7 @@ public class DefaultTimeTests : MementoFixture
     protected override string ExtraSettings => """, "DefaultTime": "08:00" """;
 
     [Test]
-    public void SavedDefaultTime_IsUsedForADateWithoutATime()
+    public void DefaultTime_FillsMissingTime()
     {
         var overlay = App.OpenOverlay();
 

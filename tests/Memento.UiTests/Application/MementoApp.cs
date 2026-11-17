@@ -1,9 +1,11 @@
 using Memento.UiTests.Application.Views;
 using System.Linq.Expressions;
+using NUnit.Framework.Interfaces;
 using System.Reflection;
 using WinUia;
 using WinUia.Input;
 using WinUia.Models;
+using WinUia.Recording;
 
 namespace Memento.UiTests.Application;
 
@@ -27,7 +29,16 @@ public sealed class MementoApp : App
 
     public static MementoApp Launch(TestDataDirectory data) => Launch<MementoApp>(data.LaunchOptions);
 
-    protected override AppLaunchOptions DefaultOptions => new() { ShowPointer = true };
+    // Every run is recorded (needs ffmpeg); a failed test's video is also copied to Recordings/Failed. The pipeline picks what to upload.
+    protected override AppLaunchOptions DefaultOptions => new()
+    {
+        ShowPointer = true,
+        Recording = new RecordingOptions
+        {
+            FileName = () => TestContext.CurrentContext.Test.FullName,
+            Failed = () => TestContext.CurrentContext.Result.Outcome.Status is TestStatus.Failed or TestStatus.Inconclusive,
+        },
+    };
 
     public bool IsOverlayShown => TryFindOwnWindow(OverlayTitle, Absent) is not null;
 
